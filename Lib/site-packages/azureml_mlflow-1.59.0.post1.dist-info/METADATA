@@ -1,0 +1,66 @@
+Metadata-Version: 2.1
+Name: azureml-mlflow
+Version: 1.59.0.post1
+Summary: Contains the integration code of AzureML with Mlflow.
+Home-page: https://docs.microsoft.com/python/api/overview/azure/ml/?view=azure-ml-py
+Author: Microsoft Corp
+License: https://aka.ms/azureml-sdk-license
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: Other/Proprietary License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: MacOS
+Classifier: Operating System :: POSIX :: Linux
+Requires-Python: >=3.8,<4.0
+Description-Content-Type: text/x-rst
+License-File: LICENSE.txt
+Requires-Dist: jsonpickle
+Requires-Dist: mlflow-skinny
+Requires-Dist: azure-identity
+Requires-Dist: msrest>=0.6.18
+Requires-Dist: azure-core!=1.22.0,<2.0.0,>=1.8.0
+Requires-Dist: azure-mgmt-core<2.0.0,>=1.2.0
+Requires-Dist: azure-storage-blob<=12.19.0,>=12.5.0
+Requires-Dist: azure-common<2.0.0,>=1.1
+Requires-Dist: cryptography
+Requires-Dist: python-dateutil<3.0.0,>=2.7.3
+Requires-Dist: protobuf<=5.28.3
+Requires-Dist: pytz
+Provides-Extra: deployments
+Requires-Dist: flask; extra == "deployments"
+Requires-Dist: numpy; extra == "deployments"
+Requires-Dist: pandas; extra == "deployments"
+
+Microsoft Azure Machine Learning Tracking server plugin for Python
+==================================================================
+
+The azureml-mlflow package contains the integration code of AzureML with MLflow.
+MLflow (https://mlflow.org/) is an open-source platform for tracking machine learning experiments and managing models.
+You can use MLflow logging APIs with Azure Machine Learning so that metrics and artifacts are logged to your Azure
+machine learning workspace.
+
+Usage
+-----
+
+Within an `AzureML Workspace <https://docs.microsoft.com/python/api/overview/azure/ml/intro?view=azure-ml-py>`_,
+add the code below to use MLflow.
+
+.. code-block:: python
+
+   import mlflow
+   from azureml.core import Workspace
+
+   workspace = Workspace.from_config()
+
+   mlflow.set_tracking_uri(workspace.get_mlflow_tracking_uri())
+
+More examples can be found at https://aka.ms/azureml-mlflow-examples.
+
+

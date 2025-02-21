@@ -1,0 +1,17 @@
+[mlflow.artifact_repository]
+azureml = azureml.mlflow.entry_point_loaders:azureml_artifacts_builder
+
+[mlflow.deployments]
+azureml = azureml.mlflow.deploy
+
+[mlflow.model_registry_store]
+azureml = azureml.mlflow.entry_point_loaders:azureml_model_registry_builder
+
+[mlflow.project_backend]
+azureml = azureml.mlflow.entry_point_loaders:azureml_project_run_builder
+
+[mlflow.request_header_provider]
+azureml = azureml.mlflow.entry_point_loaders:azureml_request_header_provider
+
+[mlflow.tracking_store]
+azureml = azureml.mlflow.entry_point_loaders:azureml_store_builder

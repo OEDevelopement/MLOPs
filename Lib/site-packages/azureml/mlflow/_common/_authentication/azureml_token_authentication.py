@@ -1,0 +1,462 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+import base64
+import errno
+import logging
+import os
+import re
+import threading
+import datetime
+
+from dateutil.parser import parse
+import jwt
+import pytz
+from azureml.mlflow._logging.logged_lock import LoggedLock
+from azureml.mlflow._common.async_utils.daemon import Daemon
+from cryptography.fernet import Fernet
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from azure.core.credentials import AccessToken
+
+module_logger = logging.getLogger(__name__)
+
+
+# Picked up from azureml-core
+class AzureMLTokenAuthentication(object):
+    """Manages authentication and access tokens in the context of submitted runs.
+
+    The Azure Machine Learning token is generated when a run is submitted and is only available to the
+    code that submitted the run. The AzureMLTokenAuthentication class can only be used in the context of the
+    submitted run. The returned token cannot be used against any Azure Resource Manager (ARM) operations
+    like provisioning compute. The Azure Machine Learning token is useful when executing a program
+    remotely where it might be unsafe to use the private credentials of a user.
+
+    .. remarks::
+
+        Consumers of this class should call the class method :meth:`create`, which creates a new object or
+        returns a registered instance with the same run_scope (``subscription_id``, ``resource_group_name``,
+        ``workspace_name``, ``experiment_name``, ``run_id``) provided.
+
+    :param azureml_access_token: The Azure ML token is generated when a run is submitted and is only
+        available to the code submitted.
+    :type azureml_access_token: str
+    :param expiry_time: The Azure ML token's expiration time.
+    :type expiry_time: datetime.datetime
+    :param host:
+    :type host: str
+    :param subscription_id: The Azure subscription ID where the experiment is submitted.
+    :type subscription_id: str
+    :param resource_group_name: The resource group name where the experiment is submitted.
+    :type resource_group_name: str
+    :param workspace_name: The workspace where the experiment is submitted.
+    :type workspace_name: str
+    :param experiment_name: The experiment name.
+    :type experiment_name: str
+    :param experiment_id: The experiment id. If provided experiment_name will be ignored
+    :type experiment_id: str
+    :param run_id: The ID of the run.
+    :type run_id: str
+    :param user_email: Optional user email.
+    :type user_email: str
+    :param cloud: The name of the target cloud. Can be one of "AzureCloud", "AzureChinaCloud", or
+        "AzureUSGovernment". If no cloud is specified, "AzureCloud" is used.
+    :type cloud: str
+
+    Attributes:
+        EXPIRATION_THRESHOLD_IN_SECONDS (int): Seconds before expiration that refresh process starts.
+
+        REFRESH_INTERVAL_IN_SECONDS (int): Seconds before a retry times out.
+
+    """
+
+    _registered_auth = dict()
+    _host_clientbase = dict()
+    _register_auth_lock = threading.Lock()
+    _daemon = None
+
+    # To refresh the token as late as (3 network retries (30s call timeout) + 5s buffer) seconds before it expires
+    EXPIRATION_THRESHOLD_IN_SECONDS = 95
+    REFRESH_INTERVAL_IN_SECONDS = 30
+
+    def __init__(self, azureml_access_token, expiry_time=None, host=None, subscription_id=None,
+                 resource_group_name=None, workspace_name=None, experiment_name=None, run_id=None, user_email=None,
+                 experiment_id=None):
+        """Authorize users by their Azure ML token.
+
+        The Azure ML token is generated when a run is submitted and is only available to the code submitted.
+        The class can only be used in the context of the submitted run. The token cannot be used against any ARM
+        operations like provisioning compute. The Azure ML token is useful when executing a program remotely
+        where it might be unsafe to use the user's private credentials. The consumer of this class should call the
+        class method create which creates a new object or returns a registered instance with the same run_scope
+        (subscription_id, resource_group_name, workspace_name, experiment_name, run_id) provided.
+
+        :param azureml_access_token: The Azure ML token is generated when a run is submitted and is only
+            available to the code submitted.
+        :type azureml_access_token: str
+        :param expiry_time: The Azure ML token's expiration time.
+        :type expiry_time: datetime.Datetime
+        :param host:
+        :type host: str
+        :param subscription_id: The Azure subscription ID where the experiment is submitted.
+        :type subscription_id: str
+        :param resource_group_name: The resource group name where the experiment is submitted.
+        :type resource_group_name: str
+        :param workspace_name: The workspace where the experiment is submitted.
+        :type workspace_name: str
+        :param experiment_name: The experiment name.
+        :type experiment_name: str
+        :param experiment_id: The experiment id. If provided experiment_name will be ignored
+        :type experiment_id: str
+        :param run_id: The ID of the run.
+        :type run_id: str
+        :param user_email: An optional user email.
+        :type user_email: str
+        :param cloud: The name of the target cloud. Can be one of "AzureCloud", "AzureChinaCloud", or
+            "AzureUSGovernment". If no cloud is specified, "AzureCloud" is used.
+        :type cloud: str
+        """
+        self._aml_access_token = azureml_access_token
+        self._user_email = user_email
+        self._aml_token_lock = LoggedLock(_ident="AMLTokenLock", _parent_logger=module_logger)
+        self._expiry_time = AzureMLTokenAuthentication._parse_expiry_time_from_token(
+            self._aml_access_token) if expiry_time is None else expiry_time
+        self._host = host
+        self._subscription_id = subscription_id
+        self._resource_group_name = resource_group_name
+        self._workspace_name = workspace_name
+        self._experiment_name = experiment_name
+        self._experiment_id = experiment_id
+        self._run_id = run_id
+        self._run_scope_info = (self._subscription_id,
+                                self._resource_group_name,
+                                self._workspace_name,
+                                self._run_id,
+                                self._experiment_id if self._experiment_id else self._experiment_name)
+        # super(AzureMLTokenAuthentication, self).__init__(cloud)
+
+        if AzureMLTokenAuthentication._daemon is None:
+            AzureMLTokenAuthentication._daemon = Daemon(
+                work_func=AzureMLTokenAuthentication._update_registered_auth,
+                interval_sec=AzureMLTokenAuthentication.REFRESH_INTERVAL_IN_SECONDS,
+                _ident="TokenRefresherDaemon",
+                _parent_logger=module_logger)
+            AzureMLTokenAuthentication._daemon.start()
+
+        if any((param is None for param in self._run_scope_info)):
+            module_logger.warning("The AzureMLTokenAuthentication created will not be updated due to missing params. "
+                                  "The token expires on {}.\n".format(self._expiry_time))
+        else:
+            self._register_auth()
+
+    def get_token(self, *scopes, **kwargs):
+        """Contract for Track 2 SDKs to get token.
+
+        Currently supports Auth classes with self.get_authentication_header function implemented.
+
+        :param scopes: Args.
+        :param kwargs: Kwargs.
+        :return: Returns a named tuple.
+        :rtype: collections.namedtuple
+        """
+        expiry = \
+            jwt.decode(self._aml_access_token, options={'verify_signature': False, 'verify_aud': False})['exp']
+        return AccessToken(self._aml_access_token, int(expiry))
+
+    @classmethod
+    def create(cls, azureml_access_token, expiry_time, host, subscription_id,
+               resource_group_name, workspace_name, experiment_name, run_id, user_email=None, experiment_id=None):
+        """Create an AzureMLTokenAuthentication object or return a registered instance with the same run_scope.
+
+        :param cls: Indicates class method.
+        :param azureml_access_token: The Azure ML token is generated when a run is submitted and is only
+            available to the code submitted.
+        :type azureml_access_token: str
+        :param expiry_time: The Azure ML token's expiration time.
+        :type expiry_time: datetime.datetime
+        :param host:
+        :type host: str
+        :param subscription_id: The Azure subscription ID where the experiment is submitted.
+        :type subscription_id: str
+        :param resource_group_name: The resource group name where the experiment is submitted.
+        :type resource_group_name: str
+        :param workspace_name: The workspace where the experiment is submitted.
+        :type workspace_name: str
+        :param experiment_name: The experiment name.
+        :type experiment_name: str
+        :param experiment_id: The experiment id. If provided experiment_name will be ignored
+        :type experiment_id: str
+        :param run_id: The ID of the run.
+        :type run_id: str
+        :param user_email: An optional user email.
+        :type user_email: str
+        """
+        auth_key = cls._construct_key(subscription_id,
+                                      resource_group_name,
+                                      workspace_name,
+                                      experiment_id if experiment_id else experiment_name,
+                                      run_id)
+        if auth_key in cls._registered_auth:
+            return cls._registered_auth[auth_key]
+
+        return cls(azureml_access_token, expiry_time, host, subscription_id,
+                   resource_group_name, workspace_name, experiment_name, run_id, user_email, experiment_id)
+
+    @staticmethod
+    def _parse_expiry_time_from_token(token):
+        # We set verify=False, as we don't have keys to verify signature, and we also don't need to
+        # verify signature, we just need the expiry time.
+        decode_json = jwt.decode(token, options={'verify_signature': False, 'verify_aud': False})
+        return AzureMLTokenAuthentication._convert_to_datetime(decode_json['exp'])
+
+    @staticmethod
+    def _convert_to_datetime(expiry_time):
+        if isinstance(expiry_time, datetime.datetime):
+            return expiry_time
+        try:
+            date = parse(expiry_time)
+        except (ValueError, TypeError):
+            date = datetime.datetime.fromtimestamp(int(expiry_time))
+        return date
+
+    @staticmethod
+    def _get_token_dir():
+        temp_dir = os.environ.get("AZ_BATCHAI_JOB_TEMP", None)
+        if not temp_dir:
+            return None
+        else:
+            return os.path.join(temp_dir, "run_token")
+
+    @staticmethod
+    def _token_encryption_enabled():
+        return not os.environ.get("AZUREML_DISABLE_REFRESHED_TOKEN_SHARING") and \
+            os.environ.get("AZUREML_RUN_TOKEN_PASS") is not None and \
+            os.environ.get("AZUREML_RUN_TOKEN_RAND") is not None
+
+    @staticmethod
+    def _get_token(token, should_encrypt=False):
+        password = os.environ.get("AZUREML_RUN_TOKEN_PASS")
+        salt = os.urandom(16)
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+        key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+        f = Fernet(key)
+        if should_encrypt:
+            return f.encrypt(token.encode()).decode()
+        else:
+            return f.decrypt(token.encode()).decode()
+
+    @staticmethod
+    def _encrypt_token(token):
+        return AzureMLTokenAuthentication._get_token(token, should_encrypt=True)
+
+    @staticmethod
+    def _decrypt_token(token):
+        return AzureMLTokenAuthentication._get_token(token, should_encrypt=False)
+
+    @staticmethod
+    def _get_initial_token_and_expiry():
+        token = os.environ['AZUREML_RUN_TOKEN']
+        token_expiry_time = os.environ.get('AZUREML_RUN_TOKEN_EXPIRY',
+                                           AzureMLTokenAuthentication._parse_expiry_time_from_token(token))
+        # The token dir and the token file are only created when the token expires and the token refresh happens.
+        # If the token dir and the token file don't exist, that means that the token has not expired yet and
+        # we should continue to use the token value from the env var.
+        # make reading/writing a token file best effort initially
+        if AzureMLTokenAuthentication._token_encryption_enabled():
+            try:
+                latest_token_file = None
+                token_dir = AzureMLTokenAuthentication._get_token_dir()
+                if token_dir and os.path.exists(token_dir):
+                    token_files = [f for f in os.listdir(token_dir) if
+                                   os.path.isfile(os.path.join(token_dir, f)) and "token.txt" in f]
+                    if len(token_files) > 0:
+                        def convert(text):
+                            return int(text) if text.isdigit() else text
+
+                        def alphanum_key(key):
+                            return [convert(c) for c in re.split('([0-9]+)', key)]
+                        token_files.sort(key=alphanum_key, reverse=True)
+                        latest_token_file = token_files[0]
+
+                if latest_token_file is not None:
+                    latest_token_file_full_path = os.path.join(token_dir, latest_token_file)
+                    if os.path.exists(latest_token_file_full_path):
+                        module_logger.debug("Reading token from:{}".format(latest_token_file_full_path))
+                        encrypted_token = token
+                        with open(latest_token_file_full_path, "r") as file_handle:
+                            encrypted_token = file_handle.read()
+                        token = AzureMLTokenAuthentication._decrypt_token(encrypted_token)
+                        token_expiry_time = AzureMLTokenAuthentication._parse_expiry_time_from_token(token)
+            except Exception as ex:
+                module_logger.debug("Exception while reading a token:{}".format(ex))
+        return token, token_expiry_time
+
+    @property
+    def token(self):
+        """Return the Azure ML token.
+
+        :return: The Azure ML access token.
+        :rtype: str
+        """
+        with self._aml_token_lock:
+            return self._aml_access_token
+
+    @property
+    def expiry_time(self):
+        """Return the Azure ML token's expiration time.
+
+        :return: The expiration time.
+        :rtype: datetime.datetime
+        """
+        with self._aml_token_lock:
+            return self._expiry_time
+
+    def get_authentication_header(self):
+        """Return the HTTP authorization header.
+
+        The authorization header contains the user access token for access authorization against the service.
+
+        :return: Returns the HTTP authorization header.
+        :rtype: dict
+        """
+        return {"Authorization": "Bearer " + self._aml_access_token}
+
+    def set_token(self, token, expiry_time):
+        """Update Azure ML access token.
+
+        :param token: The token to refresh.
+        :type token: str
+        :param expiry_time: The new expiration time.
+        :type expiry_time: datetime.datetime
+        """
+        self._aml_access_token = token
+        self._expiry_time = expiry_time
+        # make reading/writing a token file best effort initially
+        if AzureMLTokenAuthentication._token_encryption_enabled():
+            try:
+                token_dir = AzureMLTokenAuthentication._get_token_dir()
+                if token_dir:
+                    module_logger.debug("Token directory {}".format(token_dir))
+                    encrypted_token = AzureMLTokenAuthentication._encrypt_token(token)
+                    seconds = (datetime.datetime.utcnow() - datetime.datetime(1, 1, 1)).total_seconds()
+                    if not os.path.exists(token_dir):
+                        try:
+                            os.makedirs(token_dir, exist_ok=True)
+                        except OSError as ex:
+                            if ex.errno != errno.EEXIST:
+                                raise
+                    token_file_path = os.path.join(token_dir, "{}_{}_token.txt".format(seconds, os.getpid()))
+                    module_logger.debug("Token file {}".format(token_file_path))
+                    with open(token_file_path, "w") as file:
+                        file.write(encrypted_token)
+            except Exception as ex:
+                module_logger.debug("Exception while writing a token:{}".format(ex))
+
+    @staticmethod
+    def _construct_key(*args):
+        return "//".join(args)
+
+    @staticmethod
+    def _should_refresh_token(current_expiry_time):
+        if current_expiry_time is None:
+            return True
+        # Refresh when remaining duration < EXPIRATION_THRESHOLD_IN_SECONDS
+        expiry_time_utc = current_expiry_time.replace(tzinfo=pytz.utc)
+        current_time = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        time_difference = expiry_time_utc - current_time
+        time_to_expire = time_difference / datetime.timedelta(seconds=1)
+        module_logger.debug("Time to expire {} seconds".format(time_to_expire))
+        return time_to_expire < AzureMLTokenAuthentication.EXPIRATION_THRESHOLD_IN_SECONDS
+
+    def _update_auth(self):
+        if AzureMLTokenAuthentication._should_refresh_token(self.expiry_time):
+            module_logger.debug("Expiration time for run scope: {} = {}, refreshing token\n".format(
+                self._run_scope_info, self.expiry_time))
+            with AzureMLTokenAuthentication._register_auth_lock:
+                host_key = AzureMLTokenAuthentication._construct_key(self._host,
+                                                                     self._subscription_id,
+                                                                     self._resource_group_name,
+                                                                     self._workspace_name)
+                if host_key in AzureMLTokenAuthentication._host_clientbase:
+                    if self._experiment_id:
+                        token_result = \
+                            AzureMLTokenAuthentication._host_clientbase[host_key].runs.get_token_by_experiment_id(
+                                *self._run_scope_info
+                            )
+                    else:
+                        token_result = AzureMLTokenAuthentication._host_clientbase[host_key].run.get_token(
+                            *self._run_scope_info
+                        )
+                    self.set_token(token_result.token, token_result.expiry_time_utc)
+
+    def _register_auth(self):
+        auth_key = AzureMLTokenAuthentication._construct_key(
+            self._subscription_id,
+            self._resource_group_name,
+            self._workspace_name,
+            self._experiment_id if self._experiment_id else self._experiment_name,
+            self._run_id
+        )
+        if auth_key in AzureMLTokenAuthentication._registered_auth:
+            module_logger.warning("Already registered authentication for run id: {}".format(self._run_id))
+        else:
+            from azureml.mlflow._restclient.token import AzureMachineLearningWorkspaces as TokenClient
+            host_key = AzureMLTokenAuthentication._construct_key(self._host,
+                                                                 self._subscription_id,
+                                                                 self._resource_group_name,
+                                                                 self._workspace_name)
+            if host_key not in AzureMLTokenAuthentication._host_clientbase:
+                AzureMLTokenAuthentication._host_clientbase[host_key] = TokenClient(
+                    self, self._host, logging_enable=os.environ.get("AZUREML_LOG_NETWORK_TRACES", False))
+
+            self._update_auth()
+            with AzureMLTokenAuthentication._register_auth_lock:
+                AzureMLTokenAuthentication._registered_auth[auth_key] = self
+
+    @classmethod
+    def _update_registered_auth(cls):
+        with cls._register_auth_lock:
+            auths = list(cls._registered_auth.values())
+        for auth in auths:
+            auth._update_auth()
+
+    @staticmethod
+    def _initialize_aml_token_auth(tenant_id):
+        try:
+            # Only use the run environment for ambient auth if specifically requested,
+            # because the AML token doesn't work for ARM operations.
+            if os.environ.get("AZUREML_RUN_TOKEN_USE_AMBIENT_AUTH", "").lower() != "true":
+                return None
+
+            # Load authentication scope environment variables.
+            subscription_id = os.environ['AZUREML_ARM_SUBSCRIPTION']
+            resource_group = os.environ["AZUREML_ARM_RESOURCEGROUP"]
+            workspace_name = os.environ["AZUREML_ARM_WORKSPACE_NAME"]
+            experiment_name = os.environ["AZUREML_ARM_PROJECT_NAME"]
+            experiment_id = os.environ.get("AZUREML_EXPERIMENT_ID", None)
+            run_id = os.environ["AZUREML_RUN_ID"]
+            url = os.environ["AZUREML_SERVICE_ENDPOINT"]
+
+            # Initialize an AMLToken auth, authorized for the current run.
+            token, token_expiry_time = AzureMLTokenAuthentication._get_initial_token_and_expiry()
+
+            return AzureMLTokenAuthentication.create(token,
+                                                     AzureMLTokenAuthentication._convert_to_datetime(
+                                                         token_expiry_time),
+                                                     url,
+                                                     subscription_id,
+                                                     resource_group,
+                                                     workspace_name,
+                                                     experiment_name,
+                                                     run_id,
+                                                     experiment_id=experiment_id)
+        except Exception as e:
+            module_logger.debug(e)
+            return None
