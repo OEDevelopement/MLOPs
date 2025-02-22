@@ -11,3 +11,4 @@ __pycache__/
 # Ignore other directories you don’t want in Git
 Lib/
 include/
+share/
