@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/7cfe3db50dca4b68897a6ee2b64c67c0/artifacts
+end_time: 1740342959115
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: 7cfe3db50dca4b68897a6ee2b64c67c0
+run_name: bittersweet-mole-771
+run_uuid: 7cfe3db50dca4b68897a6ee2b64c67c0
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740342956867
+status: 3
+tags: []
+user_id: yanoothan

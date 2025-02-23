@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/0fd09b8ef1c946f7aee1a75b2301ca95/artifacts
+end_time: 1740342954618
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: 0fd09b8ef1c946f7aee1a75b2301ca95
+run_name: indecisive-flea-946
+run_uuid: 0fd09b8ef1c946f7aee1a75b2301ca95
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740342952394
+status: 3
+tags: []
+user_id: yanoothan

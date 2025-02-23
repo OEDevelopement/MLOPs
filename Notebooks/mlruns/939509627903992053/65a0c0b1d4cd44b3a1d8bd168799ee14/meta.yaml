@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/65a0c0b1d4cd44b3a1d8bd168799ee14/artifacts
+end_time: 1740342946292
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: 65a0c0b1d4cd44b3a1d8bd168799ee14
+run_name: delicate-fly-703
+run_uuid: 65a0c0b1d4cd44b3a1d8bd168799ee14
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740342944321
+status: 3
+tags: []
+user_id: yanoothan

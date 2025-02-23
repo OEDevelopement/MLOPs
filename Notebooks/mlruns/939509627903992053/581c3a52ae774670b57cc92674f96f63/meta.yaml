@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/581c3a52ae774670b57cc92674f96f63/artifacts
+end_time: 1740342950366
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: 581c3a52ae774670b57cc92674f96f63
+run_name: silent-quail-201
+run_uuid: 581c3a52ae774670b57cc92674f96f63
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740342948325
+status: 3
+tags: []
+user_id: yanoothan

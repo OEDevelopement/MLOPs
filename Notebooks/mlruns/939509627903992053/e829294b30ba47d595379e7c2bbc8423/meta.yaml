@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/e829294b30ba47d595379e7c2bbc8423/artifacts
+end_time: 1740342952393
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: e829294b30ba47d595379e7c2bbc8423
+run_name: skillful-skunk-710
+run_uuid: e829294b30ba47d595379e7c2bbc8423
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740342950367
+status: 3
+tags: []
+user_id: yanoothan
