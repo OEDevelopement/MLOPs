@@ -12,3 +12,8 @@ __pycache__/
 Lib/
 include/
 share/
+
+# Ignore Data
+data/
+
+Notebooks/mlruns
