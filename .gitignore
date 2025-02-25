@@ -1,0 +1,19 @@
+# Ignore virtual environment
+.venv/
+
+# Ignore VSCode settings
+.vscode/
+
+# Ignore Python cache and compiled files
+__pycache__/
+*.pyc
+
+# Ignore other directories you don’t want in Git
+Lib/
+include/
+share/
+
+# Ignore Data
+data/
+
+Notebooks/mlruns
