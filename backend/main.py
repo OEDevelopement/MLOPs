@@ -1,19 +1,29 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import requests
+import requests
+import json
 import os
 
-MLFLOW_URL = os.environ.get('MLFLOW_TRACKING_URI','localhost:5000')
+MLFLOW_URL = os.environ.get('MLFLOW_TRACKING_URI','http://localhost:5000/invocations')
 
-class person(BaseModel):
+class Person(BaseModel):
     age: int
     workclass: str
-    educational_num: int
-    martial_status: str
+    educational_num: int = Field(alias="educational-num")
+    marital_status: str = Field(alias="marital-status")
     occupation: str
     relationship: str
-    race: str
-    # add further or change depending on frontend
+    hours_per_week: int = Field(alias="hours-per-week")
+    is_Male: int  # Maintaining exact case from DataFrame
+    income_over_50K: int = Field(alias="income >50K")
+    is_White: int  # Maintaining exact case from DataFrame
+    from_USA: int  # Maintaining exact case from DataFrame
+    gained_capital: int = Field(alias="gained-capital")
+    
+    class Config:
+        populate_by_name = True
+
 
 app = FastAPI()
 
@@ -21,13 +31,25 @@ app = FastAPI()
 ### Post data from frontend to MLFLOW Server 
 
 @app.post("/predict")
-async def predict(input_data: person):
+async def predict(input_person: Person):
     """
     Empfängt JSON-Daten vom Client, sendet diese an den MLflow Server und gibt die Vorhersage zurück.
     """
     try:
         # Sende eine POST-Anfrage an den MLflow-Endpoint mit den Inputdaten
-        response = requests.post(MLFLOW_URL, json=input_data)
+        model_dict = input_person.model_dump(by_alias=True)
+        split_format = {
+            "columns": list(model_dict.keys()),
+            "data": [list(model_dict.values())],
+            "index": [0]
+        }
+        headers = {"Content-Type": "application/json"}
+
+        # Use the manually created split format dictionary as the payload
+        payload = json.dumps({"dataframe_split": split_format})
+
+        response = requests.post(MLFLOW_URL, data=payload, headers=headers)
+        print(response.status_code, response.text)
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         # Fehlerbehandlung, falls die Anfrage fehlschlägt
