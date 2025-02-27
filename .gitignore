@@ -16,4 +16,4 @@ share/
 # Ignore Data
 data/
 
-Notebooks/mlruns
+Notebooks/mlruns/
