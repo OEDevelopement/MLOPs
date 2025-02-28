@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/3c277c54b28c41829bcc9baae6be92fb/artifacts
+end_time: 1740755035986
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: 3c277c54b28c41829bcc9baae6be92fb
+run_name: merciful-whale-888
+run_uuid: 3c277c54b28c41829bcc9baae6be92fb
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740755031766
+status: 3
+tags: []
+user_id: yanoothan

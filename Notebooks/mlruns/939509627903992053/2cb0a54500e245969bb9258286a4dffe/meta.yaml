@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/2cb0a54500e245969bb9258286a4dffe/artifacts
+end_time: 1740754924369
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: 2cb0a54500e245969bb9258286a4dffe
+run_name: masked-croc-133
+run_uuid: 2cb0a54500e245969bb9258286a4dffe
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740754922634
+status: 3
+tags: []
+user_id: yanoothan

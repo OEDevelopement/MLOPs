@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/df163eda07ae4fe79fc14c1d0318e5c7/artifacts
+end_time: 1740754950623
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: df163eda07ae4fe79fc14c1d0318e5c7
+run_name: thundering-ant-626
+run_uuid: df163eda07ae4fe79fc14c1d0318e5c7
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740754947862
+status: 3
+tags: []
+user_id: yanoothan

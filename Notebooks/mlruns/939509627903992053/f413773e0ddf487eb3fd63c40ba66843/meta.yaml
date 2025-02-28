@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/f413773e0ddf487eb3fd63c40ba66843/artifacts
+end_time: 1740755000822
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: f413773e0ddf487eb3fd63c40ba66843
+run_name: mercurial-croc-783
+run_uuid: f413773e0ddf487eb3fd63c40ba66843
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740754989169
+status: 3
+tags: []
+user_id: yanoothan

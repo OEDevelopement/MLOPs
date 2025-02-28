@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/496a86361288462cbd1ae75d40e09dee/artifacts
+end_time: 1740754919834
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: 496a86361288462cbd1ae75d40e09dee
+run_name: enthused-lamb-701
+run_uuid: 496a86361288462cbd1ae75d40e09dee
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740754918456
+status: 3
+tags: []
+user_id: yanoothan

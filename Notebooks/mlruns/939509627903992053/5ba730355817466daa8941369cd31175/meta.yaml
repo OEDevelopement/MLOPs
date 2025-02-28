@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/5ba730355817466daa8941369cd31175/artifacts
+end_time: 1740755059418
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: 5ba730355817466daa8941369cd31175
+run_name: serious-pug-194
+run_uuid: 5ba730355817466daa8941369cd31175
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740755048038
+status: 3
+tags: []
+user_id: yanoothan

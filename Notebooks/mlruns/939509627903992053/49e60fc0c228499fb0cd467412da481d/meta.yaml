@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/49e60fc0c228499fb0cd467412da481d/artifacts
+end_time: 1740755017710
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: 49e60fc0c228499fb0cd467412da481d
+run_name: aged-bird-875
+run_uuid: 49e60fc0c228499fb0cd467412da481d
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740755014135
+status: 3
+tags: []
+user_id: yanoothan

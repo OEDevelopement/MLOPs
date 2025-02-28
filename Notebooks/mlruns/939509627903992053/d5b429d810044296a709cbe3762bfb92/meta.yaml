@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/d5b429d810044296a709cbe3762bfb92/artifacts
+end_time: 1740754893183
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: d5b429d810044296a709cbe3762bfb92
+run_name: caring-wolf-582
+run_uuid: d5b429d810044296a709cbe3762bfb92
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740754891165
+status: 3
+tags: []
+user_id: yanoothan

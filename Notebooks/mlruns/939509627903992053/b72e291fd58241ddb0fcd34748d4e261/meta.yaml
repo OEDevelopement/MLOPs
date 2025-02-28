@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/b72e291fd58241ddb0fcd34748d4e261/artifacts
+end_time: 1740754901694
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: b72e291fd58241ddb0fcd34748d4e261
+run_name: aged-shrike-101
+run_uuid: b72e291fd58241ddb0fcd34748d4e261
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740754899439
+status: 3
+tags: []
+user_id: yanoothan

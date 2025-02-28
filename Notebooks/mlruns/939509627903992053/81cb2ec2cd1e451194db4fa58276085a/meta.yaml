@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/81cb2ec2cd1e451194db4fa58276085a/artifacts
+end_time: 1740754936113
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: 81cb2ec2cd1e451194db4fa58276085a
+run_name: worried-moth-224
+run_uuid: 81cb2ec2cd1e451194db4fa58276085a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740754934846
+status: 3
+tags: []
+user_id: yanoothan

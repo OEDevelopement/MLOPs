@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/11f65233fccc41c29f8396dd9cf79283/artifacts
+end_time: 1740755031765
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: 11f65233fccc41c29f8396dd9cf79283
+run_name: dapper-eel-154
+run_uuid: 11f65233fccc41c29f8396dd9cf79283
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740755027456
+status: 3
+tags: []
+user_id: yanoothan

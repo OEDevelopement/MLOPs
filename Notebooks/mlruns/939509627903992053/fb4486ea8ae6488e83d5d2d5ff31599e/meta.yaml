@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/fb4486ea8ae6488e83d5d2d5ff31599e/artifacts
+end_time: 1740754978705
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: fb4486ea8ae6488e83d5d2d5ff31599e
+run_name: clean-ox-747
+run_uuid: fb4486ea8ae6488e83d5d2d5ff31599e
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740754967519
+status: 3
+tags: []
+user_id: yanoothan

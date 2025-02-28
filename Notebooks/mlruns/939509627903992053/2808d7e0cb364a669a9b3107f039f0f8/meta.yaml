@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/2808d7e0cb364a669a9b3107f039f0f8/artifacts
+end_time: 1740754917158
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: 2808d7e0cb364a669a9b3107f039f0f8
+run_name: capricious-bat-785
+run_uuid: 2808d7e0cb364a669a9b3107f039f0f8
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740754914421
+status: 3
+tags: []
+user_id: yanoothan

@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/ae34b901f21e48d9bac35007cb58e7cd/artifacts
+end_time: 1740754944937
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: ae34b901f21e48d9bac35007cb58e7cd
+run_name: kindly-wolf-887
+run_uuid: ae34b901f21e48d9bac35007cb58e7cd
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740754943566
+status: 3
+tags: []
+user_id: yanoothan

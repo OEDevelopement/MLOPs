@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/377a4518320341f4b06007a05177320f/artifacts
+end_time: 1740754931645
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: 377a4518320341f4b06007a05177320f
+run_name: traveling-tern-24
+run_uuid: 377a4518320341f4b06007a05177320f
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740754929958
+status: 3
+tags: []
+user_id: yanoothan

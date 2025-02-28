@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/e70e6b4ceafe451f810e76f042339a28/artifacts
+end_time: 1740754959202
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: e70e6b4ceafe451f810e76f042339a28
+run_name: wise-smelt-550
+run_uuid: e70e6b4ceafe451f810e76f042339a28
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740754953346
+status: 3
+tags: []
+user_id: yanoothan

@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/Notebooks/mlruns/939509627903992053/e11a1f8c520d46859bea4e5ef72b0db5/artifacts
+end_time: 1740754903914
+entry_point_name: ''
+experiment_id: '939509627903992053'
+lifecycle_stage: active
+run_id: e11a1f8c520d46859bea4e5ef72b0db5
+run_name: redolent-grouse-228
+run_uuid: e11a1f8c520d46859bea4e5ef72b0db5
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740754901695
+status: 3
+tags: []
+user_id: yanoothan
