@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/9ee40234db054413889f55df66a2ba1a/artifacts
+end_time: 1740824466528
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: 9ee40234db054413889f55df66a2ba1a
+run_name: funny-mare-162
+run_uuid: 9ee40234db054413889f55df66a2ba1a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824460824
+status: 3
+tags: []
+user_id: yanoothan

@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/ab9d04f820f14b068436ee6b69294c32/artifacts
+end_time: 1740824370728
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: ab9d04f820f14b068436ee6b69294c32
+run_name: awesome-frog-43
+run_uuid: ab9d04f820f14b068436ee6b69294c32
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824368047
+status: 3
+tags: []
+user_id: yanoothan

@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/0cfedfc1ad8c4a9c9401b79535c30a39/artifacts
+end_time: 1740824345367
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: 0cfedfc1ad8c4a9c9401b79535c30a39
+run_name: burly-croc-48
+run_uuid: 0cfedfc1ad8c4a9c9401b79535c30a39
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824343403
+status: 3
+tags: []
+user_id: yanoothan

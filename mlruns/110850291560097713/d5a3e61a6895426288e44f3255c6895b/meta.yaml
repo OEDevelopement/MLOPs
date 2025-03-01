@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/d5a3e61a6895426288e44f3255c6895b/artifacts
+end_time: 1740824419502
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: d5a3e61a6895426288e44f3255c6895b
+run_name: salty-dog-521
+run_uuid: d5a3e61a6895426288e44f3255c6895b
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824416870
+status: 3
+tags: []
+user_id: yanoothan

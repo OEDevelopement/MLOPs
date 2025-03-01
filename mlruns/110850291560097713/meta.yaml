@@ -1,0 +1,6 @@
+artifact_location: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713
+creation_time: 1740824215104
+experiment_id: '110850291560097713'
+last_update_time: 1740824215104
+lifecycle_stage: active
+name: income_prediction

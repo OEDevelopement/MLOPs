@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/e59997e4952c48f4904a4c3d7e5c6f74/artifacts
+end_time: 1740824509107
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: e59997e4952c48f4904a4c3d7e5c6f74
+run_name: sedate-steed-160
+run_uuid: e59997e4952c48f4904a4c3d7e5c6f74
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824498189
+status: 3
+tags: []
+user_id: yanoothan

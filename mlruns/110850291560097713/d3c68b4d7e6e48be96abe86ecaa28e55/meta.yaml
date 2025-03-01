@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/d3c68b4d7e6e48be96abe86ecaa28e55/artifacts
+end_time: 1740824449227
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: d3c68b4d7e6e48be96abe86ecaa28e55
+run_name: likeable-shrike-219
+run_uuid: d3c68b4d7e6e48be96abe86ecaa28e55
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824445755
+status: 3
+tags: []
+user_id: yanoothan

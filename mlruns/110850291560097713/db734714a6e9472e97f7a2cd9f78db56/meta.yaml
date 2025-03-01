@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/db734714a6e9472e97f7a2cd9f78db56/artifacts
+end_time: 1740824386258
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: db734714a6e9472e97f7a2cd9f78db56
+run_name: gifted-eel-864
+run_uuid: db734714a6e9472e97f7a2cd9f78db56
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824385008
+status: 3
+tags: []
+user_id: yanoothan

@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/b6257306cd7f4d7287b31bbb8e0d649f/artifacts
+end_time: 1740824374702
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: b6257306cd7f4d7287b31bbb8e0d649f
+run_name: dapper-penguin-254
+run_uuid: b6257306cd7f4d7287b31bbb8e0d649f
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824373429
+status: 3
+tags: []
+user_id: yanoothan

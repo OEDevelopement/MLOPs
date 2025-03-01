@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/f306ab809d09413e80ee3f6b0b4c7a6d/artifacts
+end_time: 1740824477334
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: f306ab809d09413e80ee3f6b0b4c7a6d
+run_name: amazing-midge-872
+run_uuid: f306ab809d09413e80ee3f6b0b4c7a6d
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824466529
+status: 3
+tags: []
+user_id: yanoothan

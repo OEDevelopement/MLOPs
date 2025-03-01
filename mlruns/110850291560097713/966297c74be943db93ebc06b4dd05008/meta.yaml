@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/966297c74be943db93ebc06b4dd05008/artifacts
+end_time: 1740824365330
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: 966297c74be943db93ebc06b4dd05008
+run_name: sassy-conch-11
+run_uuid: 966297c74be943db93ebc06b4dd05008
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824362651
+status: 3
+tags: []
+user_id: yanoothan

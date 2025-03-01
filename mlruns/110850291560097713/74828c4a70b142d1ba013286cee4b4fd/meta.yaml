@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/74828c4a70b142d1ba013286cee4b4fd/artifacts
+end_time: 1740824395867
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: 74828c4a70b142d1ba013286cee4b4fd
+run_name: merciful-snake-503
+run_uuid: 74828c4a70b142d1ba013286cee4b4fd
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824394615
+status: 3
+tags: []
+user_id: yanoothan

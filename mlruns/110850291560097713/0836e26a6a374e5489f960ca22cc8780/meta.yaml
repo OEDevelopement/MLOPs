@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/0836e26a6a374e5489f960ca22cc8780/artifacts
+end_time: 1740824429265
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: 0836e26a6a374e5489f960ca22cc8780
+run_name: victorious-seal-487
+run_uuid: 0836e26a6a374e5489f960ca22cc8780
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824423566
+status: 3
+tags: []
+user_id: yanoothan

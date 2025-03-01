@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/184a007872734dc3beea49c6fc8d2e3b/artifacts
+end_time: 1740824416869
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: 184a007872734dc3beea49c6fc8d2e3b
+run_name: defiant-kite-173
+run_uuid: 184a007872734dc3beea49c6fc8d2e3b
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824412825
+status: 3
+tags: []
+user_id: yanoothan

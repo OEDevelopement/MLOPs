@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/f0554ce143b84cb3baa823b6ee23766a/artifacts
+end_time: 1740824383011
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: f0554ce143b84cb3baa823b6ee23766a
+run_name: abrasive-donkey-173
+run_uuid: f0554ce143b84cb3baa823b6ee23766a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824381724
+status: 3
+tags: []
+user_id: yanoothan

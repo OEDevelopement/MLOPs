@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/a81e1547fe5044aa9a9586ffb7cdf187/artifacts
+end_time: 1740824351251
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: a81e1547fe5044aa9a9586ffb7cdf187
+run_name: gaudy-perch-851
+run_uuid: a81e1547fe5044aa9a9586ffb7cdf187
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824349278
+status: 3
+tags: []
+user_id: yanoothan

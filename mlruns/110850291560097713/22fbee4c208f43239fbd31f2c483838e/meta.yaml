@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/yanoothan/Master/MLOps/MLOPS_Einkommensvorhersage/mlruns/110850291560097713/22fbee4c208f43239fbd31f2c483838e/artifacts
+end_time: 1740824393329
+entry_point_name: ''
+experiment_id: '110850291560097713'
+lifecycle_stage: active
+run_id: 22fbee4c208f43239fbd31f2c483838e
+run_name: adorable-pig-895
+run_uuid: 22fbee4c208f43239fbd31f2c483838e
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1740824391561
+status: 3
+tags: []
+user_id: yanoothan
