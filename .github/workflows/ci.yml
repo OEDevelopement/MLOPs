@@ -1,0 +1,70 @@
+### Continuous Integration: Testet Code & speichert Modelle mit MLflow
+
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - DEV
+  pull_request:
+    branches:
+      - DEV
+      - UAT
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      
+      - name: Install Dependencies
+        run: |
+          pip install -r backend/requirements.txt
+      
+      - name: Run Backend Tests
+        run: |
+          pytest tests/
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      
+      - name: Install Dependencies
+        run: |
+          pip install -r frontend/requirements.txt
+      
+      - name: Run Frontend Tests
+        run: |
+          pytest tests/
+
+  train-model:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Train Model & Log to MLflow
+        run: |
+          python mlflow/mlflow_setup.py
