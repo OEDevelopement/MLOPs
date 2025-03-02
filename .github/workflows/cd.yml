@@ -1,5 +1,4 @@
-### Continuous Deployment: Build & Deploy mit Docker Compose
-
+### Continuous Deployment: Build & Deploy mit Azure App Service & ACR
 name: CD Pipeline
 
 on:
@@ -19,41 +18,63 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       
-      - name: Log in to DockerHub
-        uses: docker/login-action@v2
+      - name: Log in to Azure Container Registry
+        uses: azure/docker-login@v1
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
       
       - name: Build & Push Backend Image
         run: |
-          docker build -t myrepo/backend:${{ github.ref_name }} -f backend/Dockerfile .
-          docker push myrepo/backend:${{ github.ref_name }}
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.ref_name }} -f backend/Dockerfile backend/
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.ref_name }}
       
       - name: Build & Push Frontend Image
         run: |
-          docker build -t myrepo/frontend:${{ github.ref_name }} -f frontend/Dockerfile .
-          docker push myrepo/frontend:${{ github.ref_name }}
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/frontend:${{ github.ref_name }} -f frontend/Dockerfile frontend/
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/frontend:${{ github.ref_name }}
       
       - name: Build & Push MLflow Image
         run: |
-          docker build -t myrepo/mlflow:${{ github.ref_name }} -f mlflow/Dockerfile .
-          docker push myrepo/mlflow:${{ github.ref_name }}
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/mlflow:${{ github.ref_name }} -f mlflow/Dockerfile mlflow/
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/mlflow:${{ github.ref_name }}
+      
+      - name: Build & Push Prometheus Image
+        run: |
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/prometheus:${{ github.ref_name }} -f monitoring/Dockerfile monitoring/
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/prometheus:${{ github.ref_name }}
 
   deploy:
     if: github.ref == 'refs/heads/main'
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: SSH into Server & Deploy
-        uses: appleboy/ssh-action@v0.1.7
+      - name: Azure Login
+        uses: azure/login@v1
         with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd /home/deploy/myproject
-            git pull origin main
-            docker-compose down
-            docker-compose pull
-            docker-compose up -d
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Deploy Backend to Azure App Service
+        run: |
+          az webapp create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --plan ${{ secrets.AZURE_APP_PLAN }} --name backend-app --deployment-container-image-name ${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.ref_name }}
+      
+      - name: Deploy Frontend to Azure App Service
+        run: |
+          az webapp create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --plan ${{ secrets.AZURE_APP_PLAN }} --name frontend-app --deployment-container-image-name ${{ secrets.ACR_LOGIN_SERVER }}/frontend:${{ github.ref_name }}
+      
+      - name: Deploy MLflow to Azure App Service
+        run: |
+          az webapp create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --plan ${{ secrets.AZURE_APP_PLAN }} --name mlflow-app --deployment-container-image-name ${{ secrets.ACR_LOGIN_SERVER }}/mlflow:${{ github.ref_name }}
+      
+      - name: Deploy Prometheus to Azure App Service
+        run: |
+          az webapp create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --plan ${{ secrets.AZURE_APP_PLAN }} --name prometheus-app --deployment-container-image-name ${{ secrets.ACR_LOGIN_SERVER }}/prometheus:${{ github.ref_name }}
+
+  monitor-cd:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Send CD Metrics to Grafana Cloud
+        run: |
+          curl -X POST https://api.grafana.com/api/metrics --user "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" --header "Content-Type: application/json" --data '{"pipeline": "CD", "status": "${{ job.status }}", "timestamp": "${{ github.run_id }}"}'
