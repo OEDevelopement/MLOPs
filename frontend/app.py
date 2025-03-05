@@ -43,7 +43,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # API endpoint
-API_URL = "http://localhost:8000/predict"
+API_URL = "http://backend:8000/predict"
 
 # Page title
 st.markdown("<h1 class='main-header'>Income Prediction Application</h1>", unsafe_allow_html=True)
