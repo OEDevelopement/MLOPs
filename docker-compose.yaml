@@ -57,18 +57,18 @@ services:
  # ---------------------------------
   # MODEL SERVICE
   # ---------------------------------
-  model_service:
-    image: income_predictor:latest  # Use the image built by MLflow
-    container_name: model_service
-    ports:
-      - "8080:8080"  # MLServer default port
-    networks:
-      - app_network
-    volumes:
-      - model_data:/opt/ml/model  # Optional volume for model data
-    environment:
-      MLSERVER_MODEL_NAME: income_predictor
-      MLSERVER_HTTP_PORT: 8080
+  # model_service:
+  #   image: income_predictor:latest  # Use the image built by MLflow
+  #   container_name: model_service
+  #   ports:
+  #     - "8080:8080"  # MLServer default port
+  #   networks:
+  #     - app_network
+  #   volumes:
+  #     - model_data:/opt/ml/model  # Optional volume for model data
+  #   environment:
+  #     MLSERVER_MODEL_NAME: income_predictor
+  #     MLSERVER_HTTP_PORT: 8080
 
   # ---------------------------------
   # MONITORING (z.B. Grafana als Beispiel)
