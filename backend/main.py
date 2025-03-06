@@ -5,7 +5,7 @@ import requests
 import json
 import os
 
-MLFLOW_URL = os.environ.get('MLFLOW_TRACKING_URI','http://localhost:5000/invocations')
+MLFLOW_URL = os.environ.get('MLFLOW_SERVING_URI','http://localhost:5000')
 
 class Person(BaseModel):
     age: int
@@ -48,7 +48,7 @@ async def predict(input_person: Person):
         # Use the manually created split format dictionary as the payload
         payload = json.dumps({"dataframe_split": split_format})
 
-        response = requests.post(MLFLOW_URL, data=payload, headers=headers)
+        response = requests.post(f"{MLFLOW_URL}/invocations", data=payload, headers=headers)
         print(response.status_code, response.text)
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
