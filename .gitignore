@@ -8,6 +8,7 @@ income-venv/
 # Ignore Python cache and compiled files
 __pycache__/
 *.pyc
+.pytest_cache
 
 # Ignore build artifacts
 *.pyo
@@ -25,6 +26,7 @@ Thumbs.db
 Lib/
 include/
 share/
+pyvenv.cfg
 
 # Ignore Data directories
 data/
