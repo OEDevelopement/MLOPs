@@ -32,7 +32,7 @@ services:
       - app_network
     # Beispiel-ENV-Variablen, falls nötig
     environment:
-      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_SERVING_URI: http://mlflow:8080
 
   # ---------------------------------
   # MLFLOW SERVER
