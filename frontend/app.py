@@ -4,32 +4,49 @@ import pandas as pd
 import json
 import plotly.express as px
 
-# Set page config
+# Set page config to a centered layout without a sidebar
 st.set_page_config(
     page_title="Income Prediction App",
     page_icon="💰",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="centered"
 )
 
-# Custom CSS
+# Custom CSS for a fancy look and smaller overall layout
 st.markdown("""
 <style>
+    /* Gradient background for the entire page */
+    body {
+        background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+    }
+    /* Constrain the width of the main container */
+    .block-container {
+        max-width: 800px;
+        margin: auto;
+        padding-top: 2rem;
+    }
+    /* Header styling */
     .main-header {
-        font-size: 2.5rem;
+        font-size: 2rem;
         color: #1E88E5;
         text-align: center;
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
     }
     .sub-header {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         color: #0D47A1;
         margin-bottom: 0.5rem;
     }
+    /* Prediction box styling with hover effect */
     .prediction-box {
-        padding: 1.5rem;
+        padding: 1rem;
         border-radius: 0.5rem;
         margin: 1rem 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s;
+    }
+    .prediction-box:hover {
+        transform: scale(1.03);
     }
     .prediction-high {
         background-color: #C8E6C9;
@@ -60,7 +77,7 @@ with col1:
     gender = st.radio("Gender", ["Male", "Female"])
     is_Male = 1 if gender == "Male" else 0
     
-    race = st.selectbox("Race", ["White", "Black", "Asian", "Other"])
+    race = st.radio("Race", ["White", "Other"])
     is_White = 1 if race == "White" else 0
     
     nationality = st.radio("From USA?", ["Yes", "No"])
@@ -68,7 +85,7 @@ with col1:
     
     marital_status = st.selectbox(
         "Marital Status", 
-        ["Never-married", "Married-civ-spouse", "Divorced", "Separated", "Widowed", "Married-spouse-absent", "Married-AF-spouse"]
+        ["Married", "Never-Married", "Widowed/Separated"]
     )
 
 with col2:
@@ -76,55 +93,30 @@ with col2:
     
     workclass = st.selectbox(
         "Work Class", 
-        ['Private', 'Government', 'Self Employed', 'Unemployed']
+        ['Private', 'Government', 'Self-Employed', 'Unemployed']
     )
     
-    educational_num = st.slider("Education Level (numeric)", min_value=1, max_value=16, value=10, 
+    educational_num = st.slider("Education Level (years)", min_value=1, max_value=16, value=10, 
                              help="1: No education, 16: Doctorate")
     
     occupation = st.selectbox(
         "Occupation", 
-        ['Simple Services', 'Professional', 'Public Safety',
-       'Specialized Services', 'Administrative', 'Management', 'Sales']
+        ['Simple-Services', 'Professional', 'Public Safety',
+         'Specialized-Services', 'Administrative', 'Management', 'Sales']
     )
     
     relationship = st.selectbox(
         "Relationship", 
-        ['Child', 'Husband', 'Shared Housing', 'Single', 'Wife']
+        ['Husband', 'Wife', 'Child', 'Shared-Housing', 'Single']
     )
     
     hours_per_week = st.slider("Hours per Week", min_value=1, max_value=100, value=40)
     
-    gained_capital = st.number_input("Capital Gain", min_value=0, max_value=100000, value=0)
-    
-
+    gained_capital = st.radio("Capital Gain", ["Yes", "No"])
+    gained_capital_int = 1 if gained_capital == "Yes" else 0
+     
 # Form submission
 submit_button = st.button("Predict Income", type="primary", use_container_width=True)
-
-# Display sample data visualization in the sidebar
-with st.sidebar:
-    st.header("Sample Data Insights")
-    
-    # Sample data for visualizations
-    sample_data = {
-        'Education': ['High School', 'Bachelors', 'Masters', 'Doctorate'],
-        'Avg Income': [30000, 45000, 65000, 85000]
-    }
-    df_sample = pd.DataFrame(sample_data)
-    
-    st.subheader("Average Income by Education")
-    fig = px.bar(df_sample, x='Education', y='Avg Income', color='Education')
-    st.plotly_chart(fig, use_container_width=True)
-    
-    st.subheader("Tips")
-    st.info("""
-    - Higher education levels often correlate with higher income
-    - Working more hours per week generally increases income
-    - Certain occupations like Executive and Professional roles have higher income potential
-    """)
-    
-    st.markdown("---")
-    st.caption("© 2025 Income Prediction App")
 
 # Process prediction when form is submitted
 if submit_button:
@@ -140,7 +132,7 @@ if submit_button:
         "is_Male": is_Male,
         "is_White": is_White,
         "from_USA": from_USA,
-        "gained-capital": gained_capital
+        "gained-capital": gained_capital_int
     }
     
     # Create visualization of input data
@@ -150,15 +142,15 @@ if submit_button:
     profile_cols = st.columns(4)
     with profile_cols[0]:
         st.metric("Age", age)
-        st.metric("Education Level", educational_num)
+        st.metric("Education Years", educational_num)
     with profile_cols[1]:
         st.metric("Work Hours", hours_per_week)
-        st.metric("Capital Gain", f"${gained_capital}")
+        st.metric("Capital Gain", "Yes" if gained_capital_int == 1 else "No")
     with profile_cols[2]:
-        st.metric("Gender", "Male" if is_Male else "Female")
-        st.metric("Race", "White" if is_White else "Other")
+        st.metric("Gender", "Male" if is_Male == 1 else "Female")
+        st.metric("Race", "White" if is_White == 1 else "Other")
     with profile_cols[3]:
-        st.metric("US Citizen", "Yes" if from_USA else "No")
+        st.metric("US Citizen", "Yes" if from_USA == 1 else "No")
         st.metric("Marital Status", marital_status)
         
     # Show loading spinner while making the prediction
@@ -172,58 +164,15 @@ if submit_button:
             result = response.json()
             prediction = result.get("predictions", [0])[0]
             
-            # Display prediction
+            # Display prediction with a fancy box
             if prediction > 0.5:
                 st.markdown("<div class='prediction-box prediction-high'>", unsafe_allow_html=True)
                 st.markdown("### 🎉 Income Prediction: Above $50K")
-                st.markdown(f"Confidence: {prediction:.2%}")
                 st.markdown("</div>", unsafe_allow_html=True)
             else:
                 st.markdown("<div class='prediction-box prediction-low'>", unsafe_allow_html=True)
                 st.markdown("### Income Prediction: Below $50K")
-                st.markdown(f"Confidence: {(1-prediction):.2%}")
                 st.markdown("</div>", unsafe_allow_html=True)
-                
-            # Show factors that influenced prediction
-            st.subheader("Key Factors")
-            factors_cols = st.columns(2)
-            
-            # These are simplified example factors - in a real app you'd get these from the model
-            with factors_cols[0]:
-                st.markdown("#### Positive Factors")
-                factors_pos = []
-                if educational_num > 12:
-                    factors_pos.append("Higher education level")
-                if hours_per_week > 45:
-                    factors_pos.append("Working more than 45 hours per week")
-                if gained_capital > 0:
-                    factors_pos.append("Having capital gains")
-                if occupation in ["Exec-managerial", "Prof-specialty"]:
-                    factors_pos.append("Working in a high-income occupation")
-                
-                if factors_pos:
-                    for f in factors_pos:
-                        st.markdown(f"✅ {f}")
-                else:
-                    st.markdown("No significant positive factors identified")
-            
-            with factors_cols[1]:
-                st.markdown("#### Negative Factors")
-                factors_neg = []
-                if educational_num < 10:
-                    factors_neg.append("Lower education level")
-                if age < 25:
-                    factors_neg.append("Younger age group")
-                if marital_status in ["Never-married", "Divorced"]:
-                    factors_neg.append("Marital status")
-                if relationship in ["Own-child"]:
-                    factors_neg.append("Dependent relationship")
-                
-                if factors_neg:
-                    for f in factors_neg:
-                        st.markdown(f"❌ {f}")
-                else:
-                    st.markdown("No significant negative factors identified")
                 
         except requests.exceptions.RequestException as e:
             st.error(f"Error connecting to API: {e}")
