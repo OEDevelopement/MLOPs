@@ -1,19 +1,25 @@
-FROM python:3.9-slim
+FROM python:3.9-slim  
 
-WORKDIR /mlflow_app
+WORKDIR /mlflow_app  
+RUN mkdir -p data/processed/  
+# Copy the serve_model.sh script into the container  
+COPY serve_model.sh .  
+COPY mlflow_setup.py .
+COPY param_grid_functions.py .
+COPY ./data/processed/processed_data.csv ./data/processed/
 
-# MLflow installieren
-RUN pip install --no-cache-dir mlflow scikit-learn
+# Make the serve_model.sh script executable  
+RUN chmod +x serve_model.sh  
 
-# Falls du noch weitere Packages brauchst:
-# RUN pip install <deine-weitere-packages>
+RUN chmod +x mlflow_setup.py
+RUN chmod +x param_grid_functions.py
 
-COPY serve_model.sh .
-RUN chmod +x serve_model.sh
+# Install MLflow and scikit-learn  
+RUN pip install --no-cache-dir mlflow scikit-learn  
 
-# Exponiere Port für MLflow
-EXPOSE 5000
-EXPOSE 8080
+# Expose the necessary ports for MLflow  
+EXPOSE 5000  
+EXPOSE 8080  
 
-# Standard-Kommando: MLflow-Server starten
+# Use the correct path to the script
 CMD ["./serve_model.sh"]

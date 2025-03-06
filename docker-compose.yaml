@@ -44,13 +44,12 @@ services:
     container_name: mlflow
     ports:
       - "5000:5000"
+      - "8080:8080"
     networks:
       - app_network
     volumes:
-      # Volumen, um die MLflow-Artifacts & Metadaten persistieren zu können
       - mlflow_artifacts:/mlflow
     environment:
-      # Beispiel für eine SQLite-DB als Backend
       MLFLOW_BACKEND_STORE_URI: sqlite:///mlflow.db
       MLFLOW_DEFAULT_ARTIFACT_ROOT: /mlflow
 
@@ -72,19 +71,19 @@ services:
 
   # ---------------------------------
   # MONITORING (z.B. Grafana als Beispiel)
-  # ---------------------------------
-  monitoring:
-    build:
-      context: ./monitoring
-      dockerfile: Dockerfile
-    container_name: monitoring
-    ports:
-      - "3000:3000"  # Standard-Grafana-Port
-    networks:
-      - app_network
-    depends_on:
-      - backend
-      - mlflow
+  # # ---------------------------------
+  # monitoring:
+  #   build:
+  #     context: ./monitoring
+  #     dockerfile: Dockerfile
+  #   container_name: monitoring
+  #   ports:
+  #     - "3000:3000"  # Standard-Grafana-Port
+  #   networks:
+  #     - app_network
+  #   depends_on:
+  #     - backend
+  #     - mlflow
 
 # ---------------------------------
 # NETWORKS & VOLUMES

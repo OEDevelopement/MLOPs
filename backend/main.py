@@ -16,7 +16,6 @@ class Person(BaseModel):
     relationship: str
     hours_per_week: int = Field(alias="hours-per-week")
     is_Male: int  # Maintaining exact case from DataFrame
-    income_over_50K: int = Field(alias="income >50K")
     is_White: int  # Maintaining exact case from DataFrame
     from_USA: int  # Maintaining exact case from DataFrame
     gained_capital: int = Field(alias="gained-capital")

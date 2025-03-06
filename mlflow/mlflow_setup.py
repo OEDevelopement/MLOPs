@@ -156,8 +156,3 @@ mlflow.sklearn.save_model(
         sk_model=mlflow.sklearn.load_model(model_uri),
         path="best_model"
     )
-
-mlflow.sklearn.image(
-        sk_model=mlflow.sklearn.load_model(model_uri),
-        path="best_model"
-    )

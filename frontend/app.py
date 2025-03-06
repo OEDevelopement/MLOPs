@@ -76,7 +76,7 @@ with col2:
     
     workclass = st.selectbox(
         "Work Class", 
-        ["Private", "Self-emp-not-inc", "Self-emp-inc", "Federal-gov", "Local-gov", "State-gov", "Without-pay", "Never-worked"]
+        ['Private', 'Government', 'Self Employed', 'Unemployed']
     )
     
     educational_num = st.slider("Education Level (numeric)", min_value=1, max_value=16, value=10, 
@@ -84,22 +84,19 @@ with col2:
     
     occupation = st.selectbox(
         "Occupation", 
-        ["Adm-clerical", "Exec-managerial", "Handlers-cleaners", "Prof-specialty", "Other-service",
-         "Sales", "Craft-repair", "Transport-moving", "Farming-fishing", "Machine-op-inspct", 
-         "Tech-support", "Protective-serv", "Armed-Forces", "Priv-house-serv"]
+        ['Simple Services', 'Professional', 'Public Safety',
+       'Specialized Services', 'Administrative', 'Management', 'Sales']
     )
     
     relationship = st.selectbox(
         "Relationship", 
-        ["Not-in-family", "Husband", "Wife", "Own-child", "Unmarried", "Other-relative"]
+        ['Child', 'Husband', 'Shared Housing', 'Single', 'Wife']
     )
     
     hours_per_week = st.slider("Hours per Week", min_value=1, max_value=100, value=40)
     
     gained_capital = st.number_input("Capital Gain", min_value=0, max_value=100000, value=0)
     
-    # Default value for prediction target (we'll include this in our model input)
-    income_over_50K = 0
 
 # Form submission
 submit_button = st.button("Predict Income", type="primary", use_container_width=True)
@@ -141,7 +138,6 @@ if submit_button:
         "relationship": relationship,
         "hours-per-week": hours_per_week,
         "is_Male": is_Male,
-        "income >50K": income_over_50K,
         "is_White": is_White,
         "from_USA": from_USA,
         "gained-capital": gained_capital
