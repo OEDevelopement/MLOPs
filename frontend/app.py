@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 import json
-import plotly.express as px
+import os
 
 # Set page config to a centered layout without a sidebar
 st.set_page_config(
@@ -60,7 +60,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # API endpoint
-API_URL = "http://backend:8000/predict"
+API_URL = os.environ.get('API_URL','http://backend:8000/predict')
 
 # Page title
 st.markdown("<h1 class='main-header'>Income Prediction Application</h1>", unsafe_allow_html=True)

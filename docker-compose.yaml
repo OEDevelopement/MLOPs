@@ -15,6 +15,8 @@ services:
       - backend
     networks:
       - app_network
+    environment:
+      - API_URL=http://backend:8000/predict
 
   # ---------------------------------
   # BACKEND (z.B. FastAPI)
