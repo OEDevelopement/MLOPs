@@ -11,6 +11,7 @@ mlflow server \
 sleep 5
 
 python mlflow_setup.py
+python model_validation.py
 
 sleep 10
 
