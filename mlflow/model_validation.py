@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import cross_val_score
 
-mlflow.set_tracking_uri("http://host.docker.internal:5001")
+mlflow.set_tracking_uri("http://host.docker.internal:5000")
 # Experiment laden
 experiment_name = "income_prediction"
 experiment = mlflow.get_experiment_by_name(experiment_name)
