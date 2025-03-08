@@ -17,7 +17,7 @@ from param_grid_functions import is_valid_lr_params, select_diverse_combinations
 # --------------------------------------
 
 #mlflow.set_tracking_uri("file:./mlruns") #for tracking runs locally
-mlflow.set_tracking_uri("http://host.docker.internal:5000") #for tracking runs in container
+mlflow.set_tracking_uri("http://host.docker.internal:5001") #for tracking runs in container
 
 # MLflow Experiment erstellen
 experiment_name = "income_prediction"

@@ -20,7 +20,7 @@ RUN chmod +x model_validation.py
 RUN pip install --no-cache-dir mlflow scikit-learn  
 
 # Expose the necessary ports for MLflow  
-EXPOSE 5000  
+EXPOSE 5001  
 EXPOSE 8080  
 
 # Use the correct path to the script
