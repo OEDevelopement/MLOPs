@@ -67,8 +67,14 @@ jobs:
         
         # Ressourcennamen setzen
         echo "resource_group_name=mlops-rg-${POSTFIX}" >> $GITHUB_OUTPUT
-        echo "environment_name=mlops-env-${POSTFIX}" >> $GITHUB_OUTPUT
+        echo "environment_name=mlops-aca-env" >> $GITHUB_OUTPUT
         echo "acr_name=mlops25acr${POSTFIX}" >> $GITHUB_OUTPUT
+        echo "service1_name=frontend${POSTFIX}" >> $GITHUB_OUTPUT
+        echo "service2_name=backend${POSTFIX}" >> $GITHUB_OUTPUT
+        echo "service3_name=mlflow${POSTFIX}" >> $GITHUB_OUTPUT
+        echo "service4_name=model_service${POSTFIX}" >> $GITHUB_OUTPUT
+        echo "service5_name=grafana${POSTFIX}" >> $GITHUB_OUTPUT
+        echo "service6_name=prometheus${POSTFIX}" >> $GITHUB_OUTPUT
         echo "Using POSTFIX: ${POSTFIX}"
         
     - name: Create or update Resource Group
@@ -122,17 +128,8 @@ jobs:
       id: discover_services
       run: |
         # Finden Sie alle Verzeichnisse mit Dockerfiles
-        SERVICES=()
-        for dockerfile in $(find . -name "Dockerfile" -not -path "*/node_modules/*" -not -path "*/vendor/*"); do
-          SERVICE_DIR=$(dirname $dockerfile)
-          SERVICE_NAME=$(basename $SERVICE_DIR)
-          SERVICES+=("$SERVICE_NAME")
-          echo "Found service: $SERVICE_NAME in $SERVICE_DIR"
-        done
-        
-        # Services als JSON-Array speichern
-        JSON_SERVICES=$(printf '%s\n' "${SERVICES[@]}" | jq -R . | jq -s .)
-        echo "services=$JSON_SERVICES" >> $GITHUB_OUTPUT
+        SERVICES=("${{ steps.resource_names.outputs.service1_name }}" "${{ steps.resource_names.outputs.service2_name }}" "${{ steps.resource_names.outputs.service3_name }}" "${{ steps.resource_names.outputs.service4_name }}" "${{ steps.resource_names.outputs.service5_name }}" "${{ steps.resource_names.outputs.service6_name }}")
+        echo "services=$SERVICES" >> $GITHUB_OUTPUT
         
         # Anzeigen der gefundenen Services
         echo "Discovered services: $JSON_SERVICES"
@@ -143,7 +140,7 @@ jobs:
         SERVICES='${{ steps.discover_services.outputs.services }}'
         echo "Building services: $SERVICES"
         
-        for SERVICE in $(echo "$SERVICES" | jq -r '.[]'); do
+        for SERVICE in "$SERVICES"; do
           echo "Building and pushing $SERVICE"
           
           # Pfad zum Service-Verzeichnis ermitteln

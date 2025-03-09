@@ -10,7 +10,7 @@ tag="latest"
 #compose_hash=$(md5sum docker-compose.yaml)
 resource_group_name="mlops-rg-dev" #"mlops-rg-test" / mlops-rg-prod"
 environment_name="mlops-aca-env" #nur eins pro Subscription
-acr_name="mlops25acrdev" #"mlops25acrtest" / mlops25acrprod" #muss unique sein
+acr_name="mlops25acrdev" #"mlops25acrtest" / "mlops25acrprod" #muss unique sein
 
 # Prüfen, ob Resource Group existiert und falls nicht, erstellen
 if ! az group show --name $resource_group_name &>/dev/null; then
@@ -37,7 +37,7 @@ password=$(az acr credential show --name $acr_name --query 'passwords[0].value' 
 az acr login --name $acr_name
 
 # Hier Liste Ihrer Service-Verzeichnisse anpassen
-services=("frontend" "backend" "mlflow" "model", "monitoring")
+services=("frontend" "backend" "mlflow" "model" "monitoring")
 
 # Jedes Image bauen und in die ACR pushen
 for service in "${services[@]}"; do

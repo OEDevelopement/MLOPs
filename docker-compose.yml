@@ -5,7 +5,7 @@ services:
   # FRONTEND (z.B. Streamlit)
   # ---------------------------------
   frontend:
-    image: mlops25acrdev.azurecr.io/frontend:latest
+    image: mlops25acrdev.azurecr.io/frontendtest:latest
     container_name: frontend
     ports:
       - "8501:8501"
@@ -20,7 +20,7 @@ services:
   # BACKEND (z.B. FastAPI)
   # ---------------------------------
   backend:
-    image: mlops25acrdev.azurecr.io/backend:latest
+    image: mlops25acrdev.azurecr.io/backendtest:latest
     container_name: backend
     ports:
       - "8000:8000"
@@ -36,7 +36,7 @@ services:
   # MLFLOW SERVER
   # ---------------------------------
   mlflow:
-    image: mlops25acrdev.azurecr.io/mlflow:latest
+    image: mlops25acrdev.azurecr.io/mlflowtest:latest
     container_name: mlflow
     ports:
       - "5000:5000"
@@ -69,7 +69,7 @@ services:
   # MONITORING (z.B. Grafana als Beispiel)
   # # ---------------------------------
   monitoring:
-    image: mlops25acrdev.azurecr.io/monitoring:latest
+    image: mlops25acrdev.azurecr.io/grafanatest:latest
     container_name: monitoring
     ports:
       - "3000:3000"  # Standard-Grafana-Port
