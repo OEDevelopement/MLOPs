@@ -176,4 +176,4 @@ if submit_button:
                 
         except requests.exceptions.RequestException as e:
             st.error(f"Error connecting to API: {e}")
-            st.info("Make sure the FastAPI backend is running on http://localhost:8000")
+            st.info("Make sure the FastAPI backend is running on http://backend:8000")

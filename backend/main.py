@@ -5,7 +5,7 @@ import requests
 import json
 import os
 
-MLFLOW_URL = os.environ.get('MLFLOW_SERVING_URI','http://localhost:5000')
+MLFLOW_URL = os.environ.get('MLFLOW_SERVING_URI','http://mlflow:5000')
 
 class Person(BaseModel):
     age: int
