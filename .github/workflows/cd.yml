@@ -69,12 +69,9 @@ jobs:
         echo "resource_group_name=mlops-rg-${POSTFIX}" >> $GITHUB_OUTPUT
         echo "environment_name=mlops-aca-env" >> $GITHUB_OUTPUT
         echo "acr_name=mlops25acr${POSTFIX}" >> $GITHUB_OUTPUT
-        echo "service1_name=frontend${POSTFIX}" >> $GITHUB_OUTPUT
-        echo "service2_name=backend${POSTFIX}" >> $GITHUB_OUTPUT
-        echo "service3_name=mlflow${POSTFIX}" >> $GITHUB_OUTPUT
-        echo "service4_name=model_service${POSTFIX}" >> $GITHUB_OUTPUT
-        echo "service5_name=grafana${POSTFIX}" >> $GITHUB_OUTPUT
-        echo "service6_name=prometheus${POSTFIX}" >> $GITHUB_OUTPUT
+        SERVICES=("frontend" "backend" "mlflow" "model_service" "grafana" "prometheus")
+        echo "services=$SERVICES" >> $GITHUB_OUTPUT
+        echo "psotfix=$POSTFIX" >> $GITHUB_OUTPUT
         echo "Using POSTFIX: ${POSTFIX}"
         
     - name: Create or update Resource Group
@@ -127,10 +124,7 @@ jobs:
     - name: Discover and build services
       id: discover_services
       run: |
-        # Finden Sie alle Verzeichnisse mit Dockerfiles
-        SERVICES=("${{ steps.resource_names.outputs.service1_name }}" "${{ steps.resource_names.outputs.service2_name }}" "${{ steps.resource_names.outputs.service3_name }}" "${{ steps.resource_names.outputs.service4_name }}" "${{ steps.resource_names.outputs.service5_name }}" "${{ steps.resource_names.outputs.service6_name }}")
-        echo "services=$SERVICES" >> $GITHUB_OUTPUT
-        
+        "   
         # Anzeigen der gefundenen Services
         echo "Discovered services: $JSON_SERVICES"
         
@@ -138,6 +132,7 @@ jobs:
     - name: Build and push services
       run: |
         SERVICES='${{ steps.discover_services.outputs.services }}'
+        POSTFIX='${{ steps.resource_names.outputs.postfix }}'
         echo "Building services: $SERVICES"
         
         for SERVICE in "$SERVICES"; do
@@ -147,13 +142,14 @@ jobs:
           SERVICE_DIR=$(find . -name "Dockerfile" -path "*/$SERVICE/*" -not -path "*/node_modules/*" -not -path "*/vendor/*" | xargs dirname)
           
           # Build und Push
-          docker build -t ${{ steps.acr.outputs.acr_login_server }}/$SERVICE:latest $SERVICE_DIR
-          docker push ${{ steps.acr.outputs.acr_login_server }}/$SERVICE:latest
+          docker build -t ${{ steps.acr.outputs.acr_login_server }}/$SERVICE-$POSTFIX:latest $SERVICE_DIR
+          docker push ${{ steps.acr.outputs.acr_login_server }}/$SERVICE-$POSTFIX:latest
         done
         
     - name: Deploy to Azure Container Apps
       run: |
         # Check if environment exists
+        POSTFIX='${{ steps.resource_names.outputs.postfix }}'
         if ! az containerapp env show --name ${{ steps.resource_names.outputs.environment_name }} --resource-group ${{ steps.resource_names.outputs.resource_group_name }} &>/dev/null; then
           # If first run, create with compose
           echo "Creating new Container Apps environment and deployment"
@@ -163,6 +159,7 @@ jobs:
             --registry-server ${{ steps.acr.outputs.acr_login_server }} \
             --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
             --registry-password ${{ steps.acr_creds.outputs.acr_password }}
+            --compose-file-path docker-compose-$POSTFIX.yml
         else
           # If subsequent run, update with compose
           echo "Updating existing Container Apps deployment"
@@ -171,13 +168,15 @@ jobs:
             --registry-server ${{ steps.acr.outputs.acr_login_server }} \
             --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
             --registry-password ${{ steps.acr_creds.outputs.acr_password }}
+            --compose-file-path docker-compose-$POSTFIX.yml
         fi
           
     - name: Get main application URL
       id: app_url
       run: |
         # Container App Namen aus dem Compose-File extrahieren
-        COMPOSE_SERVICES=$(grep -E "^\s*services:" -A 100 docker-compose.yml | grep -E "^\s+\w+:" | sed 's/://g' | awk '{print $1}')
+        POSTFIX='${{ steps.resource_names.outputs.postfix }}'
+        COMPOSE_SERVICES=$(grep -E "^\s*services:" -A 100 docker-compose$POSTFIX.yml | grep -E "^\s+\w+:" | sed 's/://g' | awk '{print $1}')
         MAIN_SERVICE=$(echo "$COMPOSE_SERVICES" | head -n 1)
         
         # URL der ersten App abrufen
