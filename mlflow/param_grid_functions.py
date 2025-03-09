@@ -7,7 +7,8 @@ def is_valid_lr_params(params, param_grid_lr):
     solver_penalty_map = {
         "lbfgs": ["l2", None],
         "liblinear": ["l1", "l2"],
-        "saga": ["l1", "l2", "elasticnet", None]
+        "saga": ["l1", "l2", "elasticnet", None],
+        None: [None]
     }
 
     # Prüfen, ob der Solver den Penalty-Typ unterstützt

@@ -15,6 +15,8 @@ services:
       - backend
     networks:
       - app_network
+    environment:
+      - API_URL=http://backend:8000/predict
 
   # ---------------------------------
   # BACKEND (z.B. FastAPI)
@@ -32,7 +34,7 @@ services:
       - app_network
     # Beispiel-ENV-Variablen, falls nötig
     environment:
-      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_SERVING_URI: http://mlflow:8080
 
   # ---------------------------------
   # MLFLOW SERVER
@@ -44,47 +46,46 @@ services:
     container_name: mlflow
     ports:
       - "5000:5000"
+      - "8080:8080"
     networks:
       - app_network
     volumes:
-      # Volumen, um die MLflow-Artifacts & Metadaten persistieren zu können
       - mlflow_artifacts:/mlflow
     environment:
-      # Beispiel für eine SQLite-DB als Backend
       MLFLOW_BACKEND_STORE_URI: sqlite:///mlflow.db
       MLFLOW_DEFAULT_ARTIFACT_ROOT: /mlflow
 
  # ---------------------------------
   # MODEL SERVICE
   # ---------------------------------
-  #model_service:
-  #  image: income_predictor:latest  # Use the image built by MLflow
-  #  container_name: model_service
-  #  ports:
-  #    - "8080:8080"  # MLServer default port
-  #  networks:
-  #    - app_network
-  #  volumes:
-  #    - model_data:/opt/ml/model  # Optional volume for model data
-  #  environment:
-  #    MLSERVER_MODEL_NAME: income_predictor
-  #    MLSERVER_HTTP_PORT: 8080
+  # model_service:
+  #   image: income_predictor:latest  # Use the image built by MLflow
+  #   container_name: model_service
+  #   ports:
+  #     - "8080:8080"  # MLServer default port
+  #   networks:
+  #     - app_network
+  #   volumes:
+  #     - model_data:/opt/ml/model  # Optional volume for model data
+  #   environment:
+  #     MLSERVER_MODEL_NAME: income_predictor
+  #     MLSERVER_HTTP_PORT: 8080
 
   # ---------------------------------
   # MONITORING (z.B. Grafana als Beispiel)
-  # ---------------------------------
-  monitoring:
-    build:
-      context: ./monitoring
-      dockerfile: Dockerfile
-    container_name: monitoring
-    ports:
-      - "3000:3000"  # Standard-Grafana-Port
-    networks:
-      - app_network
-    depends_on:
-      - backend
-      - mlflow
+  # # ---------------------------------
+  # monitoring:
+  #   build:
+  #     context: ./monitoring
+  #     dockerfile: Dockerfile
+  #   container_name: monitoring
+  #   ports:
+  #     - "3000:3000"  # Standard-Grafana-Port
+  #   networks:
+  #     - app_network
+  #   depends_on:
+  #     - backend
+  #     - mlflow
 
 # ---------------------------------
 # NETWORKS & VOLUMES

@@ -16,7 +16,8 @@ from param_grid_functions import is_valid_lr_params, select_diverse_combinations
 # mlflow parameter setzen
 # --------------------------------------
 
-mlflow.set_tracking_uri("file:./mlruns")
+#mlflow.set_tracking_uri("file:./mlruns") #for tracking runs locally
+mlflow.set_tracking_uri("http://host.docker.internal:5000") #for tracking runs in container
 
 # MLflow Experiment erstellen
 experiment_name = "income_prediction"
@@ -90,9 +91,9 @@ param_combinations_gb = list(itertools.product(*param_grid_gb.values()))
 param_combinations_lr = [params for params in param_combinations_lr if is_valid_lr_params(params, param_grid_lr)]
 
 # **Maximal 20 Kombinationen pro Modell**
-param_combinations_rf = select_diverse_combinations(param_combinations_rf, 20)
-param_combinations_lr = select_diverse_combinations(param_combinations_lr, 20)
-param_combinations_gb = select_diverse_combinations(param_combinations_gb, 20)
+param_combinations_rf = select_diverse_combinations(param_combinations_rf, 10)
+param_combinations_lr = select_diverse_combinations(param_combinations_lr, 10)
+param_combinations_gb = select_diverse_combinations(param_combinations_gb, 10)
 
 # Modelle mit ihren Parametern durchlaufen
 model_configs = [
@@ -156,3 +157,9 @@ mlflow.sklearn.save_model(
         sk_model=mlflow.sklearn.load_model(model_uri),
         path="best_model"
     )
+
+# # Docker-Image aus dem gespeicherten Modell bauen
+# mlflow.models.build_docker(
+#     model_uri="best_model",
+#     name="best_model_image"
+# )
