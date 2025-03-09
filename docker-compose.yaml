@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # Frontend (Streamlit)
+  frontend:
+    build: ./frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+
+  # Backend (FastAPI)
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_SERVICE_URL=http://model_service:8080/invocations
+    depends_on:
+      - model_service
+
+  # Model Service
+  model_service:
+    image: income-model-service:latest
+    ports:
+      - "8080:8080"
+
+  # MLflow Service (für Training und Modellverwaltung)
+  mlflow:
+    build: ./mlflow
+    ports:
+      - "5002:5000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_BACKEND_STORE_URI=/mlflow/mlruns
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
+    volumes:
+      - ./data:/app/data
+      - mlflow_data:/mlflow
+      - /var/run/docker.sock:/var/run/docker.sock
+    privileged: true
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+    restart: always
+    depends_on:
+      - backend
+      - model_service
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    restart: always
+
+volumes:
+  mlflow_data:
