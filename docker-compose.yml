@@ -31,7 +31,7 @@ services:
   mlflow:
     build: ./mlflow
     ports:
-      - "5002:5000"
+      - "5000:5000"
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - MLFLOW_BACKEND_STORE_URI=/mlflow/mlruns
