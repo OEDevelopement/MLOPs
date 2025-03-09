@@ -2,12 +2,15 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
+# Installiere Abhängigkeiten
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Kopiere Anwendungscode
+COPY main.py .
 
+# Port freigeben
 EXPOSE 8000
 
-# Starte die FastAPI-App über uvicorn
+# FastAPI-Anwendung starten
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

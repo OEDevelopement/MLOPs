@@ -1,27 +1,50 @@
-FROM python:3.9-slim  
+FROM python:3.9-slim
 
-WORKDIR /mlflow_app  
-RUN mkdir -p data/processed/  
-# Copy the serve_model.sh script into the container  
-COPY serve_model.sh .  
-COPY mlflow_setup.py .
-COPY param_grid_functions.py .
-COPY model_validation.py .
-#COPY ./data/processed/processed_data.csv ./data/processed/
+WORKDIR /app
 
-# Make the serve_model.sh script executable  
-RUN chmod +x serve_model.sh  
+# Systemabhängigkeiten installieren (curl hinzugefügt!)
+RUN apt-get update && apt-get install -y \
+    curl \
+    gcc \
+    g++ \
+    apt-transport-https \
+    ca-certificates \
+    gnupg \
+    lsb-release \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN chmod +x mlflow_setup.py
-RUN chmod +x param_grid_functions.py
-RUN chmod +x model_validation.py
+# Docker-CLI installieren
+RUN mkdir -p /etc/apt/keyrings
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+RUN echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+RUN apt-get update && apt-get install -y docker-ce-cli && rm -rf /var/lib/apt/lists/*
 
-# Install MLflow and scikit-learn  
-RUN pip install --no-cache-dir mlflow scikit-learn  
+# Installiere Python-Abhängigkeiten
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the necessary ports for MLflow  
-EXPOSE 5000  
-EXPOSE 8080  
+# Kopiere Skripte
+COPY mlflow_setup.py param_grid_functions.py ./
 
-# Use the correct path to the script
-CMD ["./serve_model.sh"]
+# Erstelle Verzeichnisse für MLflow
+RUN mkdir -p /mlflow /app/data /mlflow/model_dockerfile
+
+# Port freigeben
+EXPOSE 5000
+
+# Starte MLflow-Server und dann das Training
+CMD mlflow server \
+    --backend-store-uri "${MLFLOW_BACKEND_STORE_URI}" \
+    --default-artifact-root "${MLFLOW_DEFAULT_ARTIFACT_ROOT}" \
+    --host 0.0.0.0 \
+    --port 5000 & \
+    sleep 15 && \
+    if [ -f "/app/data/processed/processed_data.csv" ]; then \
+        python mlflow_setup.py; \
+    else \
+        echo "Datendatei nicht gefunden"; \
+        find /app/data -type f; \
+    fi && \
+    tail -f /dev/null
