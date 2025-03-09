@@ -64,14 +64,27 @@ jobs:
             POSTFIX="dev"
             ;;
         esac
+
+        case "${{ steps.determine_env.outputs.environment }}" in
+          "PROD")
+            LOCATION="germany"
+            ;;
+          "TEST")
+            LOCATION="france"
+            ;;
+          *)
+            LOCATION="westus"
+            ;;
+        esac
         
         # Ressourcennamen setzen
         echo "resource_group_name=mlops-rg-${POSTFIX}" >> $GITHUB_OUTPUT
-        echo "environment_name=mlops-aca-env" >> $GITHUB_OUTPUT
+        echo "environment_name=mlops-env-${POSTFIX}" >> $GITHUB_OUTPUT
         echo "acr_name=mlops25acr${POSTFIX}" >> $GITHUB_OUTPUT
         SERVICES="frontend backend mlflow placeholder_model grafana prometheus"
         echo "services=$SERVICES" >> $GITHUB_OUTPUT
         echo "postfix=$POSTFIX" >> $GITHUB_OUTPUT
+        echo "location=$LOCATION" >> $GITHUB_OUTPUT
         echo "Using POSTFIX: ${POSTFIX}"
         
     - name: Create or update Resource Group
@@ -144,17 +157,18 @@ jobs:
     - name: Deploy to Azure Container Apps
       run: |
         # Check if environment exists
-        POSTFIX=${{ steps.resource_names.outputs.postfix }}
+        POSTFIX='${{ steps.resource_names.outputs.postfix }}'
         if ! az containerapp env show --name ${{ steps.resource_names.outputs.environment_name }} --resource-group ${{ steps.resource_names.outputs.resource_group_name }} &>/dev/null; then
           # If first run, create with compose
           echo "Creating new Container Apps environment and deployment"
           az containerapp compose create \
             --environment ${{ steps.resource_names.outputs.environment_name }} \
+            --location ${{ steps.resource_names.outputs.location }} \
             --resource-group ${{ steps.resource_names.outputs.resource_group_name }} \
             --registry-server ${{ steps.acr.outputs.acr_login_server }} \
             --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
             --registry-password ${{ steps.acr_creds.outputs.acr_password }}
-            --compose-file-path docker-compose-$POSTFIX.yml
+            --compose-file-path docker-compose-${POSTFIX}.yml
         else
           # If subsequent run, update with compose
           echo "Updating existing Container Apps deployment"
@@ -163,15 +177,15 @@ jobs:
             --registry-server ${{ steps.acr.outputs.acr_login_server }} \
             --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
             --registry-password ${{ steps.acr_creds.outputs.acr_password }}
-            --compose-file-path docker-compose-$POSTFIX.yml
+            --compose-file-path docker-compose-${POSTFIX}.yml
         fi
           
     - name: Get main application URL
       id: app_url
       run: |
         # Container App Namen aus dem Compose-File extrahieren
-        POSTFIX='${{ steps.resource_names.outputs.postfix }}'
-        COMPOSE_SERVICES=$(grep -E "^\s*services:" -A 100 docker-compose$POSTFIX.yml | grep -E "^\s+\w+:" | sed 's/://g' | awk '{print $1}')
+        POSTFIX="${{ steps.resource_names.outputs.postfix }}"
+        COMPOSE_SERVICES=$(grep -E "^\s*services:" -A 100 docker-compose-${POSTFIX}.yml | grep -E "^\s+\w+:" | sed 's/://g' | awk '{print $1}')
         MAIN_SERVICE=$(echo "$COMPOSE_SERVICES" | head -n 1)
         
         # URL der ersten App abrufen
