@@ -58,7 +58,7 @@ jobs:
             POSTFIX="prod"
             ;;
           "TEST")
-            POSZFIX="test"
+            POSTFIX="test"
             ;;
           *)
             POSTFIX="dev"
@@ -69,7 +69,7 @@ jobs:
         echo "resource_group_name=mlops-rg-${POSTFIX}" >> $GITHUB_OUTPUT
         echo "environment_name=mlops-env-${POSTFIX}" >> $GITHUB_OUTPUT
         echo "acr_name=$mlops25acr${POSTFIX}" >> $GITHUB_OUTPUT
-        echo "Using POSTFIX: $POSTFIX"
+        echo "Using POSTFIX: ${POSTFIX}"
         
     - name: Create or update Resource Group
       run: |
