@@ -1,0 +1,31 @@
+
+name: Automated Model Retraining
+
+on:
+  #schedule:
+  #  - cron: '0 0 * * 7'  # Jeden Sonntag um 00:00 Uhr
+  workflow_dispatch:
+
+jobs:
+  retrain-model:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+
+      - name: Train New Model & Log to MLflow
+        run: python mlflow/mlflow_setup.py
+
+      - name: Validate Model Performance
+        run: python monitoring/validate_model.py
+
+      - name: Check Model Performance & Deploy
+        run: python monitoring/check_and_deploy.py

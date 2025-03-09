@@ -1,0 +1,204 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: 
+      - DEV
+      - TEST
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'DEV'
+        type: choice
+        options:
+          - DEV
+          - TEST
+jobs:
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+          
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ${{ env.pythonLocation }}
+          key: ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-python-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8 bandit black isort pytest pytest-cov mypy
+
+      - name: Syntax check with flake8
+        run: |
+          flake8 backend/ frontend/ mlflow/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Style check with flake8
+        run: |
+          flake8 backend/ frontend/ mlflow/ tests/ --count --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Check formatting with black
+        run: |
+          black --check backend/ frontend/ mlflow/ tests/
+
+      - name: Check import sorting with isort
+        run: |
+          isort --check-only --profile black backend/ frontend/ mlflow/ tests/
+
+      - name: Type checking with mypy
+        run: |
+          mypy --ignore-missing-imports backend/ frontend/ mlflow/
+
+      - name: Security check with bandit
+        run: |
+          bandit -r backend/ frontend/ mlflow/ -x tests/
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Verwende pip caching für schnellere Installation
+          pip install --cache-dir ~/.cache/pip -r requirements.txt
+          pip install --cache-dir ~/.cache/pip pytest pytest-cov
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Pull Docker images
+        run: |
+          docker-compose pull
+
+      - name: Build and cache Docker images
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./backend/Dockerfile
+          push: false
+          load: true
+          tags: myproject/backend:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      - name: Build and cache MLflow Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./mlflow
+          file: ./mlflow/Dockerfile
+          push: false
+          load: true
+          tags: myproject/mlflow:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      - name: Build and cache Frontend Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          load: true
+          tags: myproject/frontend:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Start services with docker-compose
+        run: |
+          docker-compose up -d
+
+      - name: Wait for services to start
+        run: |
+          sleep 30
+
+      - name: Run MLFlow tests
+        run: |
+          pytest tests/test_mlflow.py -v
+
+      - name: Run Backend tests
+        run: |
+          pytest tests/test_backend.py -v
+
+      - name: Run Frontend tests
+        run: |
+          pytest tests/test_frontend.py -v
+
+      - name: Run all tests with coverage
+        run: |
+          pytest --cov=./ --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: true
+
+      - name: Stop docker-compose services
+        if: always()
+        run: |
+          docker-compose down
+
+  auto-merge:
+    name: Auto-Merge to DEV
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    if: github.base_ref == 'DEV' && success()
+    steps:
+      - name: Merge pull request
+        uses: pascalgn/automerge-action@v0.15.6
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          MERGE_LABELS: ""
+          MERGE_METHOD: "squash"
+          MERGE_COMMIT_MESSAGE: "Auto-merge PR #{pullRequest.number} into DEV branch"
+          MERGE_FORKS: "false"
+          MERGE_RETRIES: "6"
+          MERGE_RETRY_SLEEP: "10000"

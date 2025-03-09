@@ -7,7 +7,7 @@ COPY serve_model.sh .
 COPY mlflow_setup.py .
 COPY param_grid_functions.py .
 COPY model_validation.py .
-COPY ./data/processed/processed_data.csv ./data/processed/
+#COPY ./data/processed/processed_data.csv ./data/processed/
 
 # Make the serve_model.sh script executable  
 RUN chmod +x serve_model.sh  

@@ -35,7 +35,4 @@ data/
 mlruns/
 best_model/
 Notebooks/mlruns/
-Notebooks/best_model/
-
-# Allow specific data directories
-!mlflow/data/processed/
+Notebooks/best_model

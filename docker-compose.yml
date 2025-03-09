@@ -5,9 +5,7 @@ services:
   # FRONTEND (z.B. Streamlit)
   # ---------------------------------
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: mlops25acrdev.azurecr.io/frontend:latest
     container_name: frontend
     ports:
       - "8501:8501"
@@ -22,9 +20,7 @@ services:
   # BACKEND (z.B. FastAPI)
   # ---------------------------------
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: mlops25acrdev.azurecr.io/backend:latest
     container_name: backend
     ports:
       - "8000:8000"
@@ -40,9 +36,7 @@ services:
   # MLFLOW SERVER
   # ---------------------------------
   mlflow:
-    build:
-      context: ./mlflow
-      dockerfile: Dockerfile
+    image: mlops25acrdev.azurecr.io/mlflow:latest
     container_name: mlflow
     ports:
       - "5000:5000"
@@ -74,18 +68,16 @@ services:
   # ---------------------------------
   # MONITORING (z.B. Grafana als Beispiel)
   # # ---------------------------------
-  # monitoring:
-  #   build:
-  #     context: ./monitoring
-  #     dockerfile: Dockerfile
-  #   container_name: monitoring
-  #   ports:
-  #     - "3000:3000"  # Standard-Grafana-Port
-  #   networks:
-  #     - app_network
-  #   depends_on:
-  #     - backend
-  #     - mlflow
+  monitoring:
+    image: mlops25acrdev.azurecr.io/monitoring:latest
+    container_name: monitoring
+    ports:
+      - "3000:3000"  # Standard-Grafana-Port
+    networks:
+      - app_network
+    depends_on:
+      - backend
+      - mlflow
 
 # ---------------------------------
 # NETWORKS & VOLUMES
