@@ -7,7 +7,7 @@
 
 # Grundlegende Variablen
 tag="latest"
-#compose_hash=$(md5sum docker-compose.yaml)
+#compose_hash=$(md5sum docker-compose.yml)
 resource_group_name="mlops-rg-dev" #"mlops-rg-test" / mlops-rg-prod"
 environment_name="mlops-aca-env" #nur eins pro Subscription
 acr_name="mlops25acrdev" #"mlops25acrtest" / "mlops25acrprod" #muss unique sein

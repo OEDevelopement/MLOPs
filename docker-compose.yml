@@ -1,90 +1,74 @@
 version: '3.8'
 
 services:
-  # ---------------------------------
-  # FRONTEND (z.B. Streamlit)
-  # ---------------------------------
+  # Frontend (Streamlit)
   frontend:
-    image: mlops25acrdev.azurecr.io/frontendtest:latest
-    container_name: frontend
+    build: ./frontend
     ports:
       - "8501:8501"
+    environment:
+      - BACKEND_URL=http://backend:8000
     depends_on:
       - backend
-    networks:
-      - app_network
-    environment:
-      - API_URL=http://backend:8000/predict
 
-  # ---------------------------------
-  # BACKEND (z.B. FastAPI)
-  # ---------------------------------
+  # Backend (FastAPI)
   backend:
-    image: mlops25acrdev.azurecr.io/backendtest:latest
-    container_name: backend
+    build: ./backend
     ports:
       - "8000:8000"
+    environment:
+      - MODEL_SERVICE_URL=http://model_service:8080/invocations
     depends_on:
-      - mlflow
-    networks:
-      - app_network
-    # Beispiel-ENV-Variablen, falls nötig
-    environment:
-      MLFLOW_SERVING_URI: http://mlflow:8080
+      - model_service
 
-  # ---------------------------------
-  # MLFLOW SERVER
-  # ---------------------------------
-  mlflow:
-    image: mlops25acrdev.azurecr.io/mlflowtest:latest
-    container_name: mlflow
+  # Model Service
+  model_service:
+    image: income-model-service:latest
     ports:
-      - "5000:5000"
       - "8080:8080"
-    networks:
-      - app_network
-    volumes:
-      - mlflow_artifacts:/mlflow
-    environment:
-      MLFLOW_BACKEND_STORE_URI: sqlite:///mlflow.db
-      MLFLOW_DEFAULT_ARTIFACT_ROOT: /mlflow
 
- # ---------------------------------
-  # MODEL SERVICE
-  # ---------------------------------
-  # model_service:
-  #   image: income_predictor:latest  # Use the image built by MLflow
-  #   container_name: model_service
-  #   ports:
-  #     - "8080:8080"  # MLServer default port
-  #   networks:
-  #     - app_network
-  #   volumes:
-  #     - model_data:/opt/ml/model  # Optional volume for model data
-  #   environment:
-  #     MLSERVER_MODEL_NAME: income_predictor
-  #     MLSERVER_HTTP_PORT: 8080
-
-  # ---------------------------------
-  # MONITORING (z.B. Grafana als Beispiel)
-  # # ---------------------------------
-  monitoring:
-    image: mlops25acrdev.azurecr.io/grafanatest:latest
-    container_name: monitoring
+  # MLflow Service (für Training und Modellverwaltung)
+  mlflow:
+    build: ./mlflow
     ports:
-      - "3000:3000"  # Standard-Grafana-Port
-    networks:
-      - app_network
+      - "5002:5000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_BACKEND_STORE_URI=/mlflow/mlruns
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
+    volumes:
+      - ./data:/app/data
+      - mlflow_data:/mlflow
+      - /var/run/docker.sock:/var/run/docker.sock
+    privileged: true
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+    restart: always
     depends_on:
       - backend
-      - mlflow
+      - model_service
 
-# ---------------------------------
-# NETWORKS & VOLUMES
-# ---------------------------------
-networks:
-  app_network:
-    driver: bridge
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    restart: always
 
 volumes:
-  mlflow_artifacts:
+  mlflow_data:

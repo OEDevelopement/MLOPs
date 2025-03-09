@@ -69,7 +69,7 @@ jobs:
         echo "resource_group_name=mlops-rg-${POSTFIX}" >> $GITHUB_OUTPUT
         echo "environment_name=mlops-aca-env" >> $GITHUB_OUTPUT
         echo "acr_name=mlops25acr${POSTFIX}" >> $GITHUB_OUTPUT
-        SERVICES=("frontend" "backend" "mlflow" "model_service" "grafana" "prometheus")
+        SERVICES=("frontend" "backend" "mlflow" "placholder_model" "grafana" "prometheus")
         echo "services=$SERVICES" >> $GITHUB_OUTPUT
         echo "psotfix=$POSTFIX" >> $GITHUB_OUTPUT
         echo "Using POSTFIX: ${POSTFIX}"
