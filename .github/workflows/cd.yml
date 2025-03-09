@@ -119,15 +119,7 @@ jobs:
         registry: ${{ steps.acr.outputs.acr_login_server }}
         username: ${{ steps.acr_creds.outputs.acr_username }}
         password: ${{ steps.acr_creds.outputs.acr_password }}
-        
-    # Dynamisch Services aus dem repository erkennen und bauen
-    - name: Discover and build services
-      id: discover_services
-      run: |
-        "   
-        # Anzeigen der gefundenen Services
-        echo "Discovered services: $JSON_SERVICES"
-        
+             
     # Für jeden Service bauen und pushen
     - name: Build and push services
       run: |
