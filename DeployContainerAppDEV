@@ -1,0 +1,83 @@
+#!/bin/bash
+#set -e  # Skript bei Fehlern beenden
+#trap 'echo "An error occurred. Exiting..."; exit 1;' ERR
+
+# Azure CLI Extensions installieren
+#az extension add --name containerapp --upgrade --yes
+
+# Grundlegende Variablen
+tag="latest"
+#compose_hash=$(md5sum docker-compose.yaml)
+resource_group_name="mlops-rg-dev" #"mlops-rg-test" / mlops-rg-prod"
+environment_name="mlops-aca-env" #nur eins pro Subscription
+acr_name="mlops25acrdev" #"mlops25acrtest" / mlops25acrprod" #muss unique sein
+
+# Prüfen, ob Resource Group existiert und falls nicht, erstellen
+if ! az group show --name $resource_group_name &>/dev/null; then
+  echo "Creating new resource group $resource_group_name"
+  az group create --name $resource_group_name --location eastus
+else
+  echo "Resource group $resource_group_name already exists"
+fi
+
+# Prüfen, ob ACR existiert und falls nicht, erstellen
+if ! az acr show --name $acr_name --resource-group $resource_group_name &>/dev/null; then
+  echo "Creating new ACR $acr_name"
+  export ACR_LOGIN_SERVER=$(az acr create --resource-group $resource_group_name --name $acr_name --sku Basic --query loginServer --output tsv)
+else
+  echo "ACR $acr_name already exists"
+  export ACR_LOGIN_SERVER=$(az acr show --name $acr_name --resource-group $resource_group_name --query loginServer --output tsv)
+fi
+
+# ACR für Admin-Zugriff aktivieren
+az acr update --name $acr_name --admin-enabled true
+password=$(az acr credential show --name $acr_name --query 'passwords[0].value' -o tsv)
+
+# In die ACR einloggen
+az acr login --name $acr_name
+
+# Hier Liste Ihrer Service-Verzeichnisse anpassen
+services=("frontend" "backend" "mlflow" "model", "monitoring")
+
+# Jedes Image bauen und in die ACR pushen
+for service in "${services[@]}"; do
+  echo "Building and pushing $service..."
+  
+  # Image bauen
+  docker build -t $ACR_LOGIN_SERVER/$service:$tag ./$service
+  
+  # Image in die ACR pushen
+  docker push $ACR_LOGIN_SERVER/$service:$tag
+done
+
+# Überprüfen, ob die Container Apps-Umgebung bereits existiert
+if ! az containerapp env show --name $environment_name --resource-group $resource_group_name &>/dev/null; then
+  # Erstes Deployment mit Container Apps compose create
+  echo "Creating new Container Apps environment and deployment"
+  az containerapp compose create \
+    --environment $environment_name \
+    --resource-group $resource_group_name \
+    --registry-server $ACR_LOGIN_SERVER \
+    --registry-username $acr_name \
+    --registry-password $password
+else
+  # Update mit Container Apps compose update
+  echo "Updating existing Container Apps deployment"
+  az containerapp compose update \
+    --resource-group $resource_group_name \
+    --registry-server $ACR_LOGIN_SERVER \
+    --registry-username $acr_name \
+    --registry-password $password
+fi
+
+# URL der Hauptanwendung abrufen (passen Sie den Namen entsprechend an)
+main_app_name="your-main-app-name"  # Ändern Sie dies zum tatsächlichen Namen Ihrer Haupt-App
+URL=$(az containerapp show --resource-group $resource_group_name --name $main_app_name --query 'properties.configuration.ingress.fqdn' -o tsv)
+echo "Application URL: https://$URL"
+curl -IL https://$URL
+
+echo "Deployment completed successfully!"
+
+# Optional: Zum Löschen aller Ressourcen auskommentieren
+# echo "Deleting all resources..."
+# az group delete --name $resource_group_name --yes

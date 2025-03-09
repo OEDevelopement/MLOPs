@@ -1,80 +1,206 @@
-### Continuous Deployment: Build & Deploy mit Azure App Service & ACR
 name: CD Pipeline
 
 on:
   push:
-    branches:
-      - UAT
-      - main
+    branches: 
+      - TEST
+      - PROD
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'TEST'
+        type: choice
+        options:
+          - TEST
+          - PROD
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    
+    # Bestimmen der Umgebung basierend auf Branch oder manueller Eingabe
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+    - name: Determine environment
+      id: determine_env
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          ENVIRONMENT="${{ github.event.inputs.environment }}"
+        else
+          ENVIRONMENT="${{ github.ref_name }}"
+        fi
+        echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
+        echo "Using environment: $ENVIRONMENT"
+    
+    - name: Checkout code
+      uses: actions/checkout@v3
       
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
       
-      - name: Log in to Azure Container Registry
-        uses: azure/docker-login@v1
-        with:
-          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
-      
-      - name: Build & Push Backend Image
-        run: |
-          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.ref_name }} -f backend/Dockerfile backend/
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.ref_name }}
-      
-      - name: Build & Push Frontend Image
-        run: |
-          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/frontend:${{ github.ref_name }} -f frontend/Dockerfile frontend/
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/frontend:${{ github.ref_name }}
-      
-      - name: Build & Push MLflow Image
-        run: |
-          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/mlflow:${{ github.ref_name }} -f mlflow/Dockerfile mlflow/
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/mlflow:${{ github.ref_name }}
-      
-      - name: Build & Push Prometheus Image
-        run: |
-          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/prometheus:${{ github.ref_name }} -f monitoring/Dockerfile monitoring/
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/prometheus:${{ github.ref_name }}
-
-  deploy:
-    if: github.ref == 'refs/heads/main'
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      
-      - name: Deploy Backend to Azure App Service
-        run: |
-          az webapp create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --plan ${{ secrets.AZURE_APP_PLAN }} --name backend-app --deployment-container-image-name ${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.ref_name }}
-      
-      - name: Deploy Frontend to Azure App Service
-        run: |
-          az webapp create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --plan ${{ secrets.AZURE_APP_PLAN }} --name frontend-app --deployment-container-image-name ${{ secrets.ACR_LOGIN_SERVER }}/frontend:${{ github.ref_name }}
-      
-      - name: Deploy MLflow to Azure App Service
-        run: |
-          az webapp create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --plan ${{ secrets.AZURE_APP_PLAN }} --name mlflow-app --deployment-container-image-name ${{ secrets.ACR_LOGIN_SERVER }}/mlflow:${{ github.ref_name }}
-      
-      - name: Deploy Prometheus to Azure App Service
-        run: |
-          az webapp create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --plan ${{ secrets.AZURE_APP_PLAN }} --name prometheus-app --deployment-container-image-name ${{ secrets.ACR_LOGIN_SERVER }}/prometheus:${{ github.ref_name }}
-
-  monitor-cd:
-    runs-on: ubuntu-latest
-    needs: deploy
-    steps:
-      - name: Send CD Metrics to Grafana Cloud
-        run: |
-          curl -X POST https://api.grafana.com/api/metrics --user "${{ secrets.GRAFANA_CLOUD_USER }}:${{ secrets.GRAFANA_CLOUD_API_KEY }}" --header "Content-Type: application/json" --data '{"pipeline": "CD", "status": "${{ job.status }}", "timestamp": "${{ github.run_id }}"}'
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+    - name: Install required Azure CLI extensions
+      run: |
+        az extension add --name containerapp --upgrade --yes
+    
+    # Setzen der Ressourcennamen basierend auf der Umgebung
+    - name: Set resource names
+      id: resource_names
+      run: |
+        # Branch-spezifische Umgebungsvariablen setzen
+        case "${{ steps.determine_env.outputs.environment }}" in
+          "PROD")
+            POSTFIX="prod"
+            ;;
+          "TEST")
+            POSZFIX="test"
+            ;;
+          *)
+            POSTFIX="dev"
+            ;;
+        esac
+        
+        # Ressourcennamen setzen
+        echo "resource_group_name=mlops-rg-${POSTFIX}" >> $GITHUB_OUTPUT
+        echo "environment_name=mlops-env-${POSTFIX}" >> $GITHUB_OUTPUT
+        echo "acr_name=$mlops25acr${POSTFIX}" >> $GITHUB_OUTPUT
+        echo "Using POSTFIX: $POSTFIX"
+        
+    - name: Create or update Resource Group
+      run: |
+        # Prüfen, ob Resource Group existiert und falls nicht, erstellen
+        if ! az group show --name ${{ steps.resource_names.outputs.resource_group_name }} &>/dev/null; then
+          echo "Creating new resource group ${{ steps.resource_names.outputs.resource_group_name }}"
+          az group create --name ${{ steps.resource_names.outputs.resource_group_name }} --location eastus
+        else
+          echo "Resource group ${{ steps.resource_names.outputs.resource_group_name }} already exists"
+        fi
+        
+    - name: Create or get existing ACR
+      id: acr
+      run: |
+        # ACR-Namen normalisieren (keine Bindestriche erlaubt)
+        ACR_NAME="${{ steps.resource_names.outputs.acr_name }}"
+        
+        # Prüfen, ob ACR existiert und falls nicht, erstellen
+        if ! az acr show --name $ACR_NAME --resource-group ${{ steps.resource_names.outputs.resource_group_name }} &>/dev/null; then
+          echo "Creating new ACR $ACR_NAME"
+          ACR_LOGIN_SERVER=$(az acr create --resource-group ${{ steps.resource_names.outputs.resource_group_name }} --name $ACR_NAME --sku Basic --query loginServer --output tsv)
+        else
+          echo "ACR $ACR_NAME already exists"
+          ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --resource-group ${{ steps.resource_names.outputs.resource_group_name }} --query loginServer --output tsv)
+        fi
+        echo "acr_login_server=$ACR_LOGIN_SERVER" >> $GITHUB_OUTPUT
+        echo "acr_name=$ACR_NAME" >> $GITHUB_OUTPUT
+        
+    - name: Enable admin access to ACR
+      run: |
+        az acr update --name ${{ steps.acr.outputs.acr_name }} --admin-enabled true
+        
+    - name: Get ACR credentials
+      id: acr_creds
+      run: |
+        ACR_USERNAME=${{ steps.acr.outputs.acr_name }}
+        ACR_PASSWORD=$(az acr credential show --name ${{ steps.acr.outputs.acr_name }} --query 'passwords[0].value' -o tsv)
+        echo "acr_username=$ACR_USERNAME" >> $GITHUB_OUTPUT
+        echo "acr_password=$ACR_PASSWORD" >> $GITHUB_OUTPUT
+        
+    - name: Login to ACR
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ steps.acr.outputs.acr_login_server }}
+        username: ${{ steps.acr_creds.outputs.acr_username }}
+        password: ${{ steps.acr_creds.outputs.acr_password }}
+        
+    # Dynamisch Services aus dem repository erkennen und bauen
+    - name: Discover and build services
+      id: discover_services
+      run: |
+        # Finden Sie alle Verzeichnisse mit Dockerfiles
+        SERVICES=()
+        for dockerfile in $(find . -name "Dockerfile" -not -path "*/node_modules/*" -not -path "*/vendor/*"); do
+          SERVICE_DIR=$(dirname $dockerfile)
+          SERVICE_NAME=$(basename $SERVICE_DIR)
+          SERVICES+=("$SERVICE_NAME")
+          echo "Found service: $SERVICE_NAME in $SERVICE_DIR"
+        done
+        
+        # Services als JSON-Array speichern
+        JSON_SERVICES=$(printf '%s\n' "${SERVICES[@]}" | jq -R . | jq -s .)
+        echo "services=$JSON_SERVICES" >> $GITHUB_OUTPUT
+        
+        # Anzeigen der gefundenen Services
+        echo "Discovered services: $JSON_SERVICES"
+        
+    # Für jeden Service bauen und pushen
+    - name: Build and push services
+      run: |
+        SERVICES='${{ steps.discover_services.outputs.services }}'
+        echo "Building services: $SERVICES"
+        
+        for SERVICE in $(echo "$SERVICES" | jq -r '.[]'); do
+          echo "Building and pushing $SERVICE"
+          
+          # Pfad zum Service-Verzeichnis ermitteln
+          SERVICE_DIR=$(find . -name "Dockerfile" -path "*/$SERVICE/*" -not -path "*/node_modules/*" -not -path "*/vendor/*" | xargs dirname)
+          
+          # Build und Push
+          docker build -t ${{ steps.acr.outputs.acr_login_server }}/$SERVICE:latest $SERVICE_DIR
+          docker push ${{ steps.acr.outputs.acr_login_server }}/$SERVICE:latest
+        done
+        
+    - name: Deploy to Azure Container Apps
+      run: |
+        # Check if environment exists
+        if ! az containerapp env show --name ${{ steps.resource_names.outputs.environment_name }} --resource-group ${{ steps.resource_names.outputs.resource_group_name }} &>/dev/null; then
+          # If first run, create with compose
+          echo "Creating new Container Apps environment and deployment"
+          az containerapp compose create \
+            --environment ${{ steps.resource_names.outputs.environment_name }} \
+            --resource-group ${{ steps.resource_names.outputs.resource_group_name }} \
+            --registry-server ${{ steps.acr.outputs.acr_login_server }} \
+            --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
+            --registry-password ${{ steps.acr_creds.outputs.acr_password }}
+        else
+          # If subsequent run, update with compose
+          echo "Updating existing Container Apps deployment"
+          az containerapp compose update \
+            --resource-group ${{ steps.resource_names.outputs.resource_group_name }} \
+            --registry-server ${{ steps.acr.outputs.acr_login_server }} \
+            --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
+            --registry-password ${{ steps.acr_creds.outputs.acr_password }}
+        fi
+          
+    - name: Get main application URL
+      id: app_url
+      run: |
+        # Container App Namen aus dem Compose-File extrahieren
+        COMPOSE_SERVICES=$(grep -E "^\s*services:" -A 100 docker-compose.yml | grep -E "^\s+\w+:" | sed 's/://g' | awk '{print $1}')
+        MAIN_SERVICE=$(echo "$COMPOSE_SERVICES" | head -n 1)
+        
+        # URL der ersten App abrufen
+        URL=$(az containerapp show --resource-group ${{ steps.resource_names.outputs.resource_group_name }} --name $MAIN_SERVICE --query 'properties.configuration.ingress.fqdn' -o tsv 2>/dev/null || echo "URL not available")
+        
+        echo "Main service: $MAIN_SERVICE"
+        echo "app_url=$URL" >> $GITHUB_OUTPUT
+        
+    - name: Test application
+      run: |
+        if [[ "${{ steps.app_url.outputs.app_url }}" != "URL not available" ]]; then
+          echo "Testing application at https://${{ steps.app_url.outputs.app_url }}"
+          curl -IL https://${{ steps.app_url.outputs.app_url }}
+        else
+          echo "Application URL not available, skipping test"
+        fi
+        
+    - name: Deployment Summary
+      run: |
+        echo "Deployment completed to environment: ${{ steps.determine_env.outputs.environment }}"
+        echo "Resource Group: ${{ steps.resource_names.outputs.resource_group_name }}"
+        echo "Container Registry: ${{ steps.acr.outputs.acr_login_server }}"
+        echo "Application URL: https://${{ steps.app_url.outputs.app_url }}"
