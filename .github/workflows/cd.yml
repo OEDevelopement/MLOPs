@@ -149,6 +149,7 @@ jobs:
     - name: Deploy to Azure Container Apps
       run: |
         # Check if environment exists
+        POSTFIX='${{ steps.resource_names.outputs.postfix }}'
         if ! az containerapp env show --name ${{ steps.resource_names.outputs.environment_name }} --resource-group ${{ steps.resource_names.outputs.resource_group_name }} &>/dev/null; then
           # If first run, create with compose
           echo "Creating new Container Apps environment and deployment"
@@ -158,7 +159,7 @@ jobs:
             --registry-server ${{ steps.acr.outputs.acr_login_server }} \
             --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
             --registry-password ${{ steps.acr_creds.outputs.acr_password }}
-            --compose-file-path docker-compose-.yml
+            --compose-file-path docker-compose-$POSTFIX.yml
         else
           # If subsequent run, update with compose
           echo "Updating existing Container Apps deployment"
@@ -167,13 +168,15 @@ jobs:
             --registry-server ${{ steps.acr.outputs.acr_login_server }} \
             --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
             --registry-password ${{ steps.acr_creds.outputs.acr_password }}
+            --compose-file-path docker-compose-$POSTFIX.yml
         fi
           
     - name: Get main application URL
       id: app_url
       run: |
         # Container App Namen aus dem Compose-File extrahieren
-        COMPOSE_SERVICES=$(grep -E "^\s*services:" -A 100 docker-compose.yml | grep -E "^\s+\w+:" | sed 's/://g' | awk '{print $1}')
+        POSTFIX='${{ steps.resource_names.outputs.postfix }}'
+        COMPOSE_SERVICES=$(grep -E "^\s*services:" -A 100 docker-compose$POSTFIX.yml | grep -E "^\s+\w+:" | sed 's/://g' | awk '{print $1}')
         MAIN_SERVICE=$(echo "$COMPOSE_SERVICES" | head -n 1)
         
         # URL der ersten App abrufen
