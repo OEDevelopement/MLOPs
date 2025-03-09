@@ -1,6 +1,7 @@
 # Ignore virtual environments
 .venv/
 income-venv/
+mlops-venv/
 
 # Ignore VSCode settings
 .vscode/
@@ -27,6 +28,7 @@ Lib/
 include/
 share/
 pyvenv.cfg
+HELPER-Files/
 
 # Ignore Data directories
 data/
