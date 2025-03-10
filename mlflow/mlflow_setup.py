@@ -2,6 +2,8 @@ import pandas as pd
 import itertools
 import mlflow
 import mlflow.sklearn
+import subprocess
+import os
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -16,8 +18,10 @@ from param_grid_functions import is_valid_lr_params, select_diverse_combinations
 # mlflow parameter setzen
 # --------------------------------------
 
-#mlflow.set_tracking_uri("file:./mlruns") #for tracking runs locally
-mlflow.set_tracking_uri("http://mlflow:5000") #for tracking runs in container
+# Verwende die Umgebungsvariable oder einen Fallback-Wert
+mlflow_tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow:5000")
+mlflow.set_tracking_uri(mlflow_tracking_uri)
+
 
 # MLflow Experiment erstellen
 experiment_name = "income_prediction"
@@ -148,18 +152,15 @@ for model_type, model_class, param_combinations, param_grid in model_configs:
 
 runs = mlflow.search_runs(experiment_ids=[experiment.experiment_id])
 best_run = runs.loc[runs["metrics.f1_score"].idxmax()]
-
 model_type = best_run["params.model_type"]
+run_id = best_run['run_id']
+model_uri = f"runs:/{run_id}/{model_type}_pipeline"
+docker_image_name = "income-model-service"
+docker_image_tag = run_id[:8]
+docker_image = f"{docker_image_name}:{docker_image_tag}"
 
-model_uri = f"runs:/{best_run['run_id']}/{best_run['params.model_type']}_pipeline"
+# Docker-Image mit MLflow erstellen
+subprocess.run(["mlflow", "models", "build-docker", "-m", model_uri, "-n", docker_image_name], check=True)
 
-mlflow.sklearn.save_model(
-        sk_model=mlflow.sklearn.load_model(model_uri),
-        path="best_model"
-    )
-
-# # Docker-Image aus dem gespeicherten Modell bauen
-# mlflow.models.build_docker(
-#     model_uri="best_model",
-#     name="best_model_image"
-# )
+# Zusätzliches Tag mit der Run-ID erstellen
+subprocess.run(["docker", "tag", f"{docker_image_name}:latest", docker_image], check=True)

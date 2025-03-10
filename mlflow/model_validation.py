@@ -6,7 +6,11 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import cross_val_score
 
-mlflow.set_tracking_uri("http://mlflow:5000")
+
+# Verwende die Umgebungsvariable oder einen Fallback-Wert
+mlflow_tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow:5000")
+mlflow.set_tracking_uri(mlflow_tracking_uri)
+
 # Experiment laden
 experiment_name = "income_prediction"
 experiment = mlflow.get_experiment_by_name(experiment_name)
