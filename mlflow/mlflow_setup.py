@@ -22,6 +22,7 @@ from param_grid_functions import is_valid_lr_params, select_diverse_combinations
 mlflow_tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow:5000")
 mlflow.set_tracking_uri(mlflow_tracking_uri)
 
+
 # MLflow Experiment erstellen
 experiment_name = "income_prediction"
 experiment = mlflow.set_experiment(experiment_name)

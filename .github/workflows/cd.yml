@@ -64,14 +64,27 @@ jobs:
             POSTFIX="dev"
             ;;
         esac
+
+        case "${{ steps.determine_env.outputs.environment }}" in
+          "PROD")
+            LOCATION="northeurope"
+            ;;
+          "TEST")
+            LOCATION="westeurope"
+            ;;
+          *)
+            LOCATION="westus2"
+            ;;
+        esac
         
         # Ressourcennamen setzen
         echo "resource_group_name=mlops-rg-${POSTFIX}" >> $GITHUB_OUTPUT
-        echo "environment_name=mlops-aca-env" >> $GITHUB_OUTPUT
+        echo "environment_name=mlops-env-${POSTFIX}" >> $GITHUB_OUTPUT
         echo "acr_name=mlops25acr${POSTFIX}" >> $GITHUB_OUTPUT
-        SERVICES=("frontend" "backend" "mlflow" "placholder_model" "grafana" "prometheus")
+        SERVICES="frontend backend mlflow placeholder_model grafana prometheus"
         echo "services=$SERVICES" >> $GITHUB_OUTPUT
-        echo "psotfix=$POSTFIX" >> $GITHUB_OUTPUT
+        echo "postfix=$POSTFIX" >> $GITHUB_OUTPUT
+        echo "location=$LOCATION" >> $GITHUB_OUTPUT
         echo "Using POSTFIX: ${POSTFIX}"
         
     - name: Create or update Resource Group
@@ -119,23 +132,18 @@ jobs:
         registry: ${{ steps.acr.outputs.acr_login_server }}
         username: ${{ steps.acr_creds.outputs.acr_username }}
         password: ${{ steps.acr_creds.outputs.acr_password }}
-        
-    # Dynamisch Services aus dem repository erkennen und bauen
-    - name: Discover and build services
-      id: discover_services
-      run: |
-        "   
-        # Anzeigen der gefundenen Services
-        echo "Discovered services: $JSON_SERVICES"
-        
+             
     # Für jeden Service bauen und pushen
     - name: Build and push services
       run: |
-        SERVICES='${{ steps.discover_services.outputs.services }}'
-        POSTFIX='${{ steps.resource_names.outputs.postfix }}'
-        echo "Building services: $SERVICES"
+        SERVICES_STRING='${{ steps.resource_names.outputs.services }}'
+        POSTFIX=${{ steps.resource_names.outputs.postfix }}
+        echo "Building services: $SERVICES_STRING"
         
-        for SERVICE in "$SERVICES"; do
+        # String in Array umwandeln
+        read -ra SERVICES_ARRAY <<< "$SERVICES_STRING"
+        
+        for SERVICE in "${SERVICES_ARRAY[@]}"; do
           echo "Building and pushing $SERVICE"
           
           # Pfad zum Service-Verzeichnis ermitteln
@@ -155,11 +163,12 @@ jobs:
           echo "Creating new Container Apps environment and deployment"
           az containerapp compose create \
             --environment ${{ steps.resource_names.outputs.environment_name }} \
+            --location ${{ steps.resource_names.outputs.location }} \
             --resource-group ${{ steps.resource_names.outputs.resource_group_name }} \
             --registry-server ${{ steps.acr.outputs.acr_login_server }} \
             --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
             --registry-password ${{ steps.acr_creds.outputs.acr_password }}
-            --compose-file-path docker-compose-$POSTFIX.yml
+            --compose-file-path docker-compose-${POSTFIX}.yml
         else
           # If subsequent run, update with compose
           echo "Updating existing Container Apps deployment"
@@ -168,15 +177,15 @@ jobs:
             --registry-server ${{ steps.acr.outputs.acr_login_server }} \
             --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
             --registry-password ${{ steps.acr_creds.outputs.acr_password }}
-            --compose-file-path docker-compose-$POSTFIX.yml
+            --compose-file-path docker-compose-${POSTFIX}.yml
         fi
           
     - name: Get main application URL
       id: app_url
       run: |
         # Container App Namen aus dem Compose-File extrahieren
-        POSTFIX='${{ steps.resource_names.outputs.postfix }}'
-        COMPOSE_SERVICES=$(grep -E "^\s*services:" -A 100 docker-compose$POSTFIX.yml | grep -E "^\s+\w+:" | sed 's/://g' | awk '{print $1}')
+        POSTFIX="${{ steps.resource_names.outputs.postfix }}"
+        COMPOSE_SERVICES=$(grep -E "^\s*services:" -A 100 docker-compose-${POSTFIX}.yml | grep -E "^\s+\w+:" | sed 's/://g' | awk '{print $1}')
         MAIN_SERVICE=$(echo "$COMPOSE_SERVICES" | head -n 1)
         
         # URL der ersten App abrufen
