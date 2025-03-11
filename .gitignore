@@ -36,3 +36,4 @@ mlruns/
 best_model/
 Notebooks/mlruns/
 Notebooks/best_model
+models/*
