@@ -5,9 +5,11 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "8501:8501"
+      - "8501:8501"  # Streamlit web UI
+      - "8001:8001"  # Metrics endpoint (changed from 8000 to 8001)
     environment:
       - BACKEND_URL=http://backend:8000
+      - API_URL=http://backend:8000/predict
     depends_on:
       - backend
 
@@ -15,7 +17,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "8000:8000"  # API and metrics endpoint
     environment:
       - MODEL_SERVICE_URL=http://model_service:8080/invocations
     depends_on:
@@ -27,7 +29,8 @@ services:
       context: ./model_service
       dockerfile: Dockerfile
     ports:
-      - "8080:8080" 
+      - "8080:8080"  # MLflow model serving
+      - "9000:9000"  # Metrics endpoint
     volumes:
       - ./models:/app/models  # Standardized path
     environment:
@@ -55,7 +58,9 @@ services:
 
   # Prometheus for metrics collection
   prometheus:
-    image: prom/prometheus:latest
+    build:
+      context: ./prometheus
+      dockerfile: Dockerfile
     ports:
       - "9090:9090"
     volumes:
@@ -64,16 +69,22 @@ services:
     depends_on:
       - backend
       - model_service
+      - frontend
 
   # Grafana for visualization
+# Grafana for visualization
   grafana:
-    image: grafana/grafana:latest
+    build:
+      context: ./grafana
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+      - GF_LOG_LEVEL=debug
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/var/lib/grafana/dashboards

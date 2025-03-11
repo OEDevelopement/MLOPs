@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Skript kopieren
 COPY wait_for_model.sh .
+COPY model_metrics.py .
 RUN chmod +x wait_for_model.sh
 
 # Modell-Pfad setzen

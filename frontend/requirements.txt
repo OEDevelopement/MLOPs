@@ -2,3 +2,4 @@ streamlit
 requests
 plotly
 pandas
+prometheus-client>=0.15.0
