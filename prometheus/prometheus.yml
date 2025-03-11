@@ -12,7 +12,7 @@ scrape_configs:
   - job_name: 'model_service'
     scrape_interval: 5s
     static_configs:
-      - targets: ['model_service:8080']
+      - targets: ['model_service:9000']  # Changed from 8080 to 9000
     metrics_path: /metrics
 
   - job_name: 'frontend'

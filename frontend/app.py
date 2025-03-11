@@ -3,6 +3,28 @@ import requests
 import pandas as pd
 import json
 import os
+from prometheus_client import Counter, Gauge, generate_latest, start_http_server
+import threading
+
+# Define metrics
+PAGE_VIEWS = Counter('frontend_page_views_total', 'Total number of page views')
+PREDICTIONS = Counter('frontend_predictions_total', 'Total number of predictions made')
+FRONTEND_UP = Gauge('frontend_up', 'Status of the frontend service')
+
+# Start metrics server in a separate thread
+def start_metrics_server():
+    start_http_server(8000)  # Start on port 8000
+    FRONTEND_UP.set(1)  # Set service as up
+
+# Start the metrics server when the app starts
+threading.Thread(target=start_metrics_server, daemon=True).start()
+
+# Then, add these lines where appropriate in your app:
+# When the app is viewed:
+PAGE_VIEWS.inc()
+
+# When a prediction is made (inside the submit_button condition):
+PREDICTIONS.inc()
 
 def create_monitoring_page():
     st.title("Simple System Monitoring")

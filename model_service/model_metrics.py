@@ -69,7 +69,7 @@ def track_model_deployment():
             CURRENT_MODEL_AGE.set(age_seconds)
 
 # Start metrics server and tracking when imported
-def start_metrics_server(port=8080):
+def start_metrics_server(port=9000):
     """Start a Prometheus metrics endpoint"""
     try:
         print(f"Starting metrics server on port {port}")
