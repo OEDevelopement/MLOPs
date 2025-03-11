@@ -4,8 +4,66 @@ import pandas as pd
 import json
 import os
 
-# Set page config to a centered layout without a sidebar
-st.set_page_config(
+def create_monitoring_page():
+    st.title("Simple System Monitoring")
+    
+    # Refresh button
+    if st.button("Refresh Data"):
+        st.experimental_rerun()
+    
+    # Try to get metrics from backend
+    try:
+        backend_url = os.environ.get('BACKEND_URL', 'http://backend:8000')
+        response = requests.get(f"{backend_url}/metrics", timeout=2)
+        
+        if response.status_code == 200:
+            metrics_text = response.text
+            
+            # Extract and display key metrics
+            api_calls = extract_metric(metrics_text, "api_calls_total")
+            predictions = extract_metric(metrics_text, "predictions_total")
+            errors = extract_metric(metrics_text, "prediction_errors_total")
+            active = extract_metric(metrics_text, "active_requests")
+            
+            # Display metrics in columns
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Total API Calls", api_calls)
+                st.metric("Active Requests", active)
+            
+            with col2:
+                st.metric("Total Predictions", predictions)
+                st.metric("Prediction Errors", errors)
+                
+            # Calculate success rate
+            if predictions and float(predictions) > 0:
+                success_rate = (float(predictions) - float(errors or 0)) / float(predictions) * 100
+                st.progress(min(success_rate/100, 1.0))
+                st.text(f"Prediction Success Rate: {success_rate:.1f}%")
+            
+            # Raw metrics (collapsed)
+            with st.expander("Raw Metrics"):
+                st.code(metrics_text)
+        else:
+            st.error(f"Failed to get metrics: HTTP {response.status_code}")
+    
+    except Exception as e:
+        st.error(f"Error connecting to backend: {e}")
+        st.info("Make sure the FastAPI backend is running and the /metrics endpoint is available")
+
+def extract_metric(metrics_text, metric_name):
+    """Extract the value of a metric from the raw prometheus text"""
+    for line in metrics_text.split('\n'):
+        if line.startswith(metric_name) and not line.startswith(f"{metric_name}_"):
+            return line.split(' ')[1]
+    return "0"
+
+# To use this in your existing app.py, add:
+# 
+if st.sidebar.selectbox("Navigation", ["Income Prediction", "Monitoring"]) == "Monitoring":
+     create_monitoring_page()
+else:
+     st.set_page_config(
     page_title="Income Prediction App",
     page_icon="💰",
     layout="centered"
