@@ -23,11 +23,21 @@ services:
 
   # Model Service
   model_service:
-    image: income-model-service:latest
+    build: 
+      context: ./model_service
+      dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "8080:8080" 
+    volumes:
+      - ./models:/app/models  # Standardized path
+    environment:
+      - MODEL_PATH=/app/models/best_model
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      - mlflow
+    restart: on-failure
 
-  # MLflow Service (für Training und Modellverwaltung)
+  # MLflow Service
   mlflow:
     build: ./mlflow
     ports:
@@ -36,10 +46,11 @@ services:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - MLFLOW_BACKEND_STORE_URI=/mlflow/mlruns
       - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
+      - MODEL_OUTPUT_PATH=/app/models/best_model  # Add this to make path explicit
     volumes:
       - ./data:/app/data
       - mlflow_data:/mlflow
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./models:/app/models # Standardized path
     privileged: true
 
   # Prometheus for metrics collection
