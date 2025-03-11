@@ -3,6 +3,8 @@ import itertools
 import mlflow
 import mlflow.sklearn
 import subprocess
+import shutil
+import datetime
 import os
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
@@ -145,21 +147,51 @@ for model_type, model_class, param_combinations, param_grid in model_configs:
             # Modell speichern
             mlflow.sklearn.log_model(pipeline, f"{model_type}_pipeline")
 
+# ...
+# Rest des Codes bleibt gleich bis zu diesem Teil:
+
 # --------------------------------------
 # bestes Modell raussuchen und speichern
 # --------------------------------------
+
+# Modell-Ausgabepfad aus der Umgebungsvariable holen
+model_output_path = os.environ.get("MODEL_OUTPUT_PATH", "/app/best_model")
+
+# Prüfen, ob bereits ein Modell existiert
+if os.path.exists(model_output_path) and os.listdir(model_output_path):
+    print(f"Vorhandenes Modell in {model_output_path} gefunden.")
+    
+    # Archiv-Verzeichnis erstellen (im übergeordneten Ordner)
+    parent_dir = os.path.dirname(model_output_path)
+    archive_dir = os.path.join(parent_dir, "archived_models")
+    os.makedirs(archive_dir, exist_ok=True)
+    
+    # Zeitstempel für eindeutigen Archivnamen
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    model_name = os.path.basename(model_output_path)
+    archive_path = os.path.join(archive_dir, f"{model_name}_{timestamp}")
+    
+    # Altes Modell ins Archiv verschieben
+    print(f"Archiviere vorhandenes Modell nach {archive_path}...")
+    shutil.move(model_output_path, archive_path)
+    
+    # Neues leeres Verzeichnis erstellen
+    os.makedirs(model_output_path, exist_ok=True)
+    print(f"Neues Verzeichnis {model_output_path} für aktuelles Modell erstellt.")
+else:
+    # Verzeichnis erstellen, falls es nicht existiert
+    os.makedirs(model_output_path, exist_ok=True)
 
 runs = mlflow.search_runs(experiment_ids=[experiment.experiment_id])
 best_run = runs.loc[runs["metrics.f1_score"].idxmax()]
 model_type = best_run["params.model_type"]
 run_id = best_run['run_id']
 model_uri = f"runs:/{run_id}/{model_type}_pipeline"
-docker_image_name = "income-model-service"
-docker_image_tag = run_id[:8]
-docker_image = f"{docker_image_name}:{docker_image_tag}"
 
-# Docker-Image mit MLflow erstellen
-subprocess.run(["mlflow", "models", "build-docker", "-m", model_uri, "-n", docker_image_name], check=True)
-
-# Zusätzliches Tag mit der Run-ID erstellen
-subprocess.run(["docker", "tag", f"{docker_image_name}:latest", docker_image], check=True)
+print(f"Speichere bestes Modell ({model_type}) in {model_output_path}...")
+mlflow.sklearn.save_model(
+        sk_model=mlflow.sklearn.load_model(model_uri),
+        path=model_output_path
+    )
+print(f"Modell erfolgreich gespeichert!")
+print(f"F1-Score des besten Modells: {best_run['metrics.f1_score']:.4f}")
