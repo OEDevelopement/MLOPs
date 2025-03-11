@@ -7,7 +7,7 @@ echo "Starte Model Service Prüfung..."
 echo "Warte auf Modell in: $MODEL_PATH"
 
 # Anzahl der Versuche
-MAX_ATTEMPTS=60
+MAX_ATTEMPTS=100
 ATTEMPT=0
 
 # Verzeichnis erstellen, falls es noch nicht existiert
