@@ -71,7 +71,7 @@ def create_monitoring_page():
     
     # Refresh button
     if st.button("Refresh Data"):
-        st.experimental_rerun()
+        st.rerun()
     
     # Try to get metrics from backend
     try:
