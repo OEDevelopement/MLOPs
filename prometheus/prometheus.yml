@@ -12,13 +12,13 @@ scrape_configs:
   - job_name: 'model_service'
     scrape_interval: 5s
     static_configs:
-      - targets: ['model_service:9000']  # Changed from 8080 to 9000
+      - targets: ['model_service:9000']
     metrics_path: /metrics
 
   - job_name: 'frontend'
     scrape_interval: 5s
     static_configs:
-      - targets: ['frontend:8501']
+      - targets: ['frontend:8001']  # Changed from 8501 to 8001 to match the metrics port
     metrics_path: /metrics
 
   - job_name: 'prometheus'
