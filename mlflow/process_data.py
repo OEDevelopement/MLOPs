@@ -53,7 +53,7 @@ df['income >50K'] = df['income'].apply(lambda wert:
 
 # binarizing native-country
 df['from_USA'] = df['native-country'].apply(lambda wert: 
-    1 if wert == 'USA' else 0
+    1 if wert == 'United-States' else 0
 )
 
 # binarizing gained-capitaö
