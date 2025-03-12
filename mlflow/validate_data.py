@@ -14,12 +14,12 @@ age_expect = gx.expectations.ExpectColumnValuesToBeOfType(
     type_='int'
 )
 
-cap_expect = gx.expectations.ExpectColumnValuesToBeInSet(
+cap_expect = gx.expectations.ExpectColumnDistinctValuesToEqualSet(
     column='gained-capital',
     value_set=[0, 1]
 )
 
-workclass_expect = gx.expectations.ExpectColumnValuesToBeInSet(
+workclass_expect = gx.expectations.ExpectColumnDistinctValuesToEqualSet(
     column='workclass',
     value_set=['Government', 'Self Employed', 'Unemployed', 'Private']
 )
@@ -29,37 +29,37 @@ education_expect = gx.expectations.ExpectColumnValuesToBeOfType(
     type_='int'
 )
 
-marital_status_expect = gx.expectations.ExpectColumnValuesToBeInSet(
+marital_status_expect = gx.expectations.ExpectColumnDistinctValuesToEqualSet(
     column='marital-status',
     value_set=['Widowed/Separated', 'Married', 'Never-married']
 )
 
-occupation_expect = gx.expectations.ExpectColumnValuesToBeInSet(
+occupation_expect = gx.expectations.ExpectColumnDistinctValuesToEqualSet(
     column='occupation',
     value_set=['Simple Services', 'Public Safety', 'Specialized Services', 'Professional', 'Management', 'Administrative', 'Sales']
 )
 
-relationship_expect = gx.expectations.ExpectColumnValuesToBeInSet(
+relationship_expect = gx.expectations.ExpectColumnDistinctValuesToEqualSet(
     column='relationship',
     value_set=['Shared Housing', 'Child', 'Husband', 'Wife', 'Single']
 )
 
-race_expect = gx.expectations.ExpectColumnValuesToBeInSet(
+race_expect = gx.expectations.ExpectColumnDistinctValuesToEqualSet(
     column='is_White',
     value_set=[0, 1]
 )
 
-gender_expect = gx.expectations.ExpectColumnValuesToBeInSet(
+gender_expect = gx.expectations.ExpectColumnDistinctValuesToEqualSet(
     column='is_Male',
     value_set=[0, 1]
 )
 
-native_region_expect = gx.expectations.ExpectColumnValuesToBeInSet(
+native_region_expect = gx.expectations.ExpectColumnDistinctValuesToEqualSet(
     column='from_USA',
     value_set=[0, 1]
 )
 
-income_expect = gx.expectations.ExpectColumnValuesToBeInSet(
+income_expect = gx.expectations.ExpectColumnDistinctValuesToEqualSet(
     column='income >50K',
     value_set=[0, 1]
 )
