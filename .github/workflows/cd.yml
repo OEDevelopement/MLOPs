@@ -19,6 +19,7 @@ on:
 jobs:
     start_vm:
         runs-on: ubuntu-latest
+        environment: ${{ github.event.inputs.environment || github.ref_name }}
         steps:
           - name: Azure Login
             uses: azure/login@v1
@@ -37,6 +38,7 @@ jobs:
 
     deploy:
         runs-on: ubuntu-latest
+        environment: ${{ github.event.inputs.environment || github.ref_name }}
         needs: start_vm
         steps:
           - name: Checkout code
