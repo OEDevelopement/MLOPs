@@ -27,6 +27,7 @@ on:
 jobs:
     start_vm:
         runs-on: ubuntu-latest
+        environment: ${{ github.event.inputs.environment || github.ref_name }}
         if: github.event.inputs.start_stop == 'start'
         steps:
           - name: Azure Login
@@ -44,6 +45,7 @@ jobs:
 
     on_start:
         runs-on: ubuntu-latest
+        environment: ${{ github.event.inputs.environment || github.ref_name }}
         needs: start_vm
         if: github.event.inputs.start_stop == 'start'
         steps:
@@ -65,6 +67,7 @@ jobs:
 
     on_stop:
         runs-on: ubuntu-latest
+        environment: ${{ github.event.inputs.environment || github.ref_name }}
         if: github.event.inputs.start_stop == 'stop'
         steps:
           - name: Checkout code
@@ -85,6 +88,7 @@ jobs:
     
     stop_vm:
         runs-on: ubuntu-latest
+        environment: ${{ github.event.inputs.environment || github.ref_name }}
         needs: on_stop
         if: github.event.inputs.start_stop == 'stop'
         steps:
