@@ -20,7 +20,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     
-    # Bestimmen der Umgebung basierend auf Branch oder manueller Eingabe
+    # Determine environment based on branch or manual input
     steps:
     - name: Determine environment
       id: determine_env
@@ -48,40 +48,31 @@ jobs:
       run: |
         az extension add --name containerapp --upgrade --yes
     
-    # Setzen der Ressourcennamen basierend auf der Umgebung
+    # Set resource names based on environment
     - name: Set resource names
       id: resource_names
       run: |
-        # Branch-spezifische Umgebungsvariablen setzen
+        # Environment-specific variables
         case "${{ steps.determine_env.outputs.environment }}" in
           "PROD")
             POSTFIX="prod"
-            ;;
-          "TEST")
-            POSTFIX="test"
-            ;;
-          *)
-            POSTFIX="dev"
-            ;;
-        esac
-
-        case "${{ steps.determine_env.outputs.environment }}" in
-          "PROD")
             LOCATION="northeurope"
             ;;
           "TEST")
+            POSTFIX="test"
             LOCATION="westeurope"
             ;;
           *)
-            LOCATION="westus2"
+            POSTFIX="dev"
+            LOCATION="westeurope"
             ;;
         esac
         
-        # Ressourcennamen setzen
+        # Set resource names
         echo "resource_group_name=mlops-rg-${POSTFIX}" >> $GITHUB_OUTPUT
-        echo "environment_name=mlops-env-${POSTFIX}" >> $GITHUB_OUTPUT
-        echo "acr_name=mlops25acr${POSTFIX}" >> $GITHUB_OUTPUT
-        SERVICES="frontend backend mlflow placeholder_model grafana prometheus"
+        echo "environment_name=mlopsenv" >> $GITHUB_OUTPUT
+        echo "acr_name=mlopscrafter25acr${POSTFIX}" >> $GITHUB_OUTPUT
+        SERVICES="frontend backend mlflow model_service prometheus grafana"
         echo "services=$SERVICES" >> $GITHUB_OUTPUT
         echo "postfix=$POSTFIX" >> $GITHUB_OUTPUT
         echo "location=$LOCATION" >> $GITHUB_OUTPUT
@@ -89,10 +80,10 @@ jobs:
         
     - name: Create or update Resource Group
       run: |
-        # Prüfen, ob Resource Group existiert und falls nicht, erstellen
+        # Check if Resource Group exists and create if not
         if ! az group show --name ${{ steps.resource_names.outputs.resource_group_name }} &>/dev/null; then
           echo "Creating new resource group ${{ steps.resource_names.outputs.resource_group_name }}"
-          az group create --name ${{ steps.resource_names.outputs.resource_group_name }} --location eastus
+          az group create --name ${{ steps.resource_names.outputs.resource_group_name }} --location ${{ steps.resource_names.outputs.location }}
         else
           echo "Resource group ${{ steps.resource_names.outputs.resource_group_name }} already exists"
         fi
@@ -100,10 +91,10 @@ jobs:
     - name: Create or get existing ACR
       id: acr
       run: |
-        # ACR-Namen normalisieren (keine Bindestriche erlaubt)
+        # Normalize ACR name (no hyphens allowed)
         ACR_NAME="${{ steps.resource_names.outputs.acr_name }}"
         
-        # Prüfen, ob ACR existiert und falls nicht, erstellen
+        # Check if ACR exists and create if not
         if ! az acr show --name $ACR_NAME --resource-group ${{ steps.resource_names.outputs.resource_group_name }} &>/dev/null; then
           echo "Creating new ACR $ACR_NAME"
           ACR_LOGIN_SERVER=$(az acr create --resource-group ${{ steps.resource_names.outputs.resource_group_name }} --name $ACR_NAME --sku Basic --query loginServer --output tsv)
@@ -133,79 +124,216 @@ jobs:
         username: ${{ steps.acr_creds.outputs.acr_username }}
         password: ${{ steps.acr_creds.outputs.acr_password }}
              
-    # Für jeden Service bauen und pushen
+    # Build and push each service
     - name: Build and push services
       run: |
         SERVICES_STRING='${{ steps.resource_names.outputs.services }}'
         POSTFIX=${{ steps.resource_names.outputs.postfix }}
         echo "Building services: $SERVICES_STRING"
         
-        # String in Array umwandeln
+        # Convert string to array
         read -ra SERVICES_ARRAY <<< "$SERVICES_STRING"
         
         for SERVICE in "${SERVICES_ARRAY[@]}"; do
           echo "Building and pushing $SERVICE"
           
-          # Pfad zum Service-Verzeichnis ermitteln
-          SERVICE_DIR=$(find . -name "Dockerfile" -path "*/$SERVICE/*" -not -path "*/node_modules/*" -not -path "*/vendor/*" | xargs dirname)
+          # Determine service directory
+          SERVICE_DIR="./$SERVICE"
           
-          # Build und Push
+          # Build and Push
           docker build -t ${{ steps.acr.outputs.acr_login_server }}/$SERVICE-$POSTFIX:latest $SERVICE_DIR
           docker push ${{ steps.acr.outputs.acr_login_server }}/$SERVICE-$POSTFIX:latest
         done
         
-    - name: Deploy to Azure Container Apps
+    # Use existing Container Apps Environment
+    - name: Verify Container Apps Environment
       run: |
+        ENVIRONMENT_NAME="${{ steps.resource_names.outputs.environment_name }}"
+        
         # Check if environment exists
-        POSTFIX='${{ steps.resource_names.outputs.postfix }}'
-        if ! az containerapp env show --name ${{ steps.resource_names.outputs.environment_name }} --resource-group ${{ steps.resource_names.outputs.resource_group_name }} &>/dev/null; then
-          # If first run, create with compose
-          echo "Creating new Container Apps environment and deployment"
-          az containerapp compose create \
-            --environment ${{ steps.resource_names.outputs.environment_name }} \
-            --location ${{ steps.resource_names.outputs.location }} \
-            --resource-group ${{ steps.resource_names.outputs.resource_group_name }} \
-            --registry-server ${{ steps.acr.outputs.acr_login_server }} \
-            --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
-            --registry-password ${{ steps.acr_creds.outputs.acr_password }}
-            --compose-file-path docker-compose-${POSTFIX}.yml
+        if ! az containerapp env show --name $ENVIRONMENT_NAME --resource-group ${{ steps.resource_names.outputs.resource_group_name }} &>/dev/null; then
+          echo "ERROR: Container Apps Environment $ENVIRONMENT_NAME does not exist in resource group ${{ steps.resource_names.outputs.resource_group_name }}"
+          echo "Please create it manually or use an existing environment"
+          exit 1
         else
-          # If subsequent run, update with compose
-          echo "Updating existing Container Apps deployment"
-          az containerapp compose update \
-            --resource-group ${{ steps.resource_names.outputs.resource_group_name }} \
-            --registry-server ${{ steps.acr.outputs.acr_login_server }} \
-            --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
-            --registry-password ${{ steps.acr_creds.outputs.acr_password }}
-            --compose-file-path docker-compose-${POSTFIX}.yml
+          echo "Container Apps Environment $ENVIRONMENT_NAME exists, proceeding with deployment"
         fi
-          
-    - name: Get main application URL
-      id: app_url
+    
+    # Deploy MLflow service first
+    - name: Deploy MLflow Service
+      id: deploy_mlflow
       run: |
-        # Container App Namen aus dem Compose-File extrahieren
-        POSTFIX="${{ steps.resource_names.outputs.postfix }}"
-        COMPOSE_SERVICES=$(grep -E "^\s*services:" -A 100 docker-compose-${POSTFIX}.yml | grep -E "^\s+\w+:" | sed 's/://g' | awk '{print $1}')
-        MAIN_SERVICE=$(echo "$COMPOSE_SERVICES" | head -n 1)
+        POSTFIX=${{ steps.resource_names.outputs.postfix }}
         
-        # URL der ersten App abrufen
-        URL=$(az containerapp show --resource-group ${{ steps.resource_names.outputs.resource_group_name }} --name $MAIN_SERVICE --query 'properties.configuration.ingress.fqdn' -o tsv 2>/dev/null || echo "URL not available")
+        echo "Deploying MLflow service..."
+        az containerapp create \
+          --name mlflow-$POSTFIX \
+          --resource-group ${{ steps.resource_names.outputs.resource_group_name }} \
+          --environment ${{ steps.resource_names.outputs.environment_name }} \
+          --image ${{ steps.acr.outputs.acr_login_server }}/mlflow-$POSTFIX:latest \
+          --registry-server ${{ steps.acr.outputs.acr_login_server }} \
+          --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
+          --registry-password ${{ steps.acr_creds.outputs.acr_password }} \
+          --target-port 5000 \
+          --ingress external \
+          --env-vars "MLFLOW_TRACKING_URI=http://mlflow-$POSTFIX:5000" \
+              "MLFLOW_BACKEND_STORE_URI=/mlflow/mlruns" \
+              "MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts" \
+              "MODEL_OUTPUT_PATH=/app/models/best_model" \
+          --min-replicas 1 \
+          --max-replicas 1 \
+          --replace
+
+        MLFLOW_URL=$(az containerapp show --name mlflow-$POSTFIX --resource-group ${{ steps.resource_names.outputs.resource_group_name }} --query properties.configuration.ingress.fqdn -o tsv)
+        echo "mlflow_url=https://$MLFLOW_URL" >> $GITHUB_OUTPUT
+    
+    # Deploy model service
+    - name: Deploy Model Service
+      id: deploy_model
+      run: |
+        POSTFIX=${{ steps.resource_names.outputs.postfix }}
         
-        echo "Main service: $MAIN_SERVICE"
-        echo "app_url=$URL" >> $GITHUB_OUTPUT
+        echo "Deploying model service..."
+        az containerapp create \
+          --name model-service-$POSTFIX \
+          --resource-group ${{ steps.resource_names.outputs.resource_group_name }} \
+          --environment ${{ steps.resource_names.outputs.environment_name }} \
+          --image ${{ steps.acr.outputs.acr_login_server }}/model_service-$POSTFIX:latest \
+          --registry-server ${{ steps.acr.outputs.acr_login_server }} \
+          --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
+          --registry-password ${{ steps.acr_creds.outputs.acr_password }} \
+          --target-port 8080 \
+          --ingress external \
+          --env-vars "MODEL_PATH=/app/models/best_model" \
+              "MLFLOW_TRACKING_URI=${{ steps.deploy_mlflow.outputs.mlflow_url }}" \
+          --min-replicas 1 \
+          --max-replicas 1 \
+          --replace
+
+        MODEL_URL=$(az containerapp show --name model-service-$POSTFIX --resource-group ${{ steps.resource_names.outputs.resource_group_name }} --query properties.configuration.ingress.fqdn -o tsv)
+        echo "model_url=https://$MODEL_URL" >> $GITHUB_OUTPUT
+    
+    # Deploy backend
+    - name: Deploy Backend Service
+      id: deploy_backend
+      run: |
+        POSTFIX=${{ steps.resource_names.outputs.postfix }}
+        
+        echo "Deploying backend service..."
+        az containerapp create \
+          --name backend-$POSTFIX \
+          --resource-group ${{ steps.resource_names.outputs.resource_group_name }} \
+          --environment ${{ steps.resource_names.outputs.environment_name }} \
+          --image ${{ steps.acr.outputs.acr_login_server }}/backend-$POSTFIX:latest \
+          --registry-server ${{ steps.acr.outputs.acr_login_server }} \
+          --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
+          --registry-password ${{ steps.acr_creds.outputs.acr_password }} \
+          --target-port 8000 \
+          --ingress external \
+          --env-vars "MODEL_SERVICE_URL=${{ steps.deploy_model.outputs.model_url }}/invocations" \
+          --min-replicas 1 \
+          --max-replicas 3 \
+          --replace
+
+        BACKEND_URL=$(az containerapp show --name backend-$POSTFIX --resource-group ${{ steps.resource_names.outputs.resource_group_name }} --query properties.configuration.ingress.fqdn -o tsv)
+        echo "backend_url=https://$BACKEND_URL" >> $GITHUB_OUTPUT
+    
+    # Deploy prometheus
+    - name: Deploy Prometheus
+      id: deploy_prometheus
+      run: |
+        POSTFIX=${{ steps.resource_names.outputs.postfix }}
+        
+        echo "Deploying Prometheus..."
+        az containerapp create \
+          --name prometheus-$POSTFIX \
+          --resource-group ${{ steps.resource_names.outputs.resource_group_name }} \
+          --environment ${{ steps.resource_names.outputs.environment_name }} \
+          --image ${{ steps.acr.outputs.acr_login_server }}/prometheus-$POSTFIX:latest \
+          --registry-server ${{ steps.acr.outputs.acr_login_server }} \
+          --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
+          --registry-password ${{ steps.acr_creds.outputs.acr_password }} \
+          --target-port 9090 \
+          --ingress external \
+          --min-replicas 1 \
+          --max-replicas 1 \
+          --replace
+
+        PROMETHEUS_URL=$(az containerapp show --name prometheus-$POSTFIX --resource-group ${{ steps.resource_names.outputs.resource_group_name }} --query properties.configuration.ingress.fqdn -o tsv)
+        echo "prometheus_url=https://$PROMETHEUS_URL" >> $GITHUB_OUTPUT
+    
+    # Deploy grafana
+    - name: Deploy Grafana
+      id: deploy_grafana
+      run: |
+        POSTFIX=${{ steps.resource_names.outputs.postfix }}
+        
+        echo "Deploying Grafana..."
+        az containerapp create \
+          --name grafana-$POSTFIX \
+          --resource-group ${{ steps.resource_names.outputs.resource_group_name }} \
+          --environment ${{ steps.resource_names.outputs.environment_name }} \
+          --image ${{ steps.acr.outputs.acr_login_server }}/grafana-$POSTFIX:latest \
+          --registry-server ${{ steps.acr.outputs.acr_login_server }} \
+          --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
+          --registry-password ${{ steps.acr_creds.outputs.acr_password }} \
+          --target-port 3000 \
+          --ingress external \
+          --env-vars "GF_SECURITY_ADMIN_USER=admin" \
+              "GF_SECURITY_ADMIN_PASSWORD=admin" \
+              "GF_USERS_ALLOW_SIGN_UP=false" \
+          --min-replicas 1 \
+          --max-replicas 1 \
+          --replace
+
+        GRAFANA_URL=$(az containerapp show --name grafana-$POSTFIX --resource-group ${{ steps.resource_names.outputs.resource_group_name }} --query properties.configuration.ingress.fqdn -o tsv)
+        echo "grafana_url=https://$GRAFANA_URL" >> $GITHUB_OUTPUT
+    
+    # Deploy frontend
+    - name: Deploy Frontend
+      id: deploy_frontend
+      run: |
+        POSTFIX=${{ steps.resource_names.outputs.postfix }}
+        
+        echo "Deploying frontend service..."
+        az containerapp create \
+          --name frontend-$POSTFIX \
+          --resource-group ${{ steps.resource_names.outputs.resource_group_name }} \
+          --environment ${{ steps.resource_names.outputs.environment_name }} \
+          --image ${{ steps.acr.outputs.acr_login_server }}/frontend-$POSTFIX:latest \
+          --registry-server ${{ steps.acr.outputs.acr_login_server }} \
+          --registry-username ${{ steps.acr_creds.outputs.acr_username }} \
+          --registry-password ${{ steps.acr_creds.outputs.acr_password }} \
+          --target-port 8501 \
+          --ingress external \
+          --env-vars "BACKEND_URL=${{ steps.deploy_backend.outputs.backend_url }}" \
+              "API_URL=${{ steps.deploy_backend.outputs.backend_url }}/predict" \
+          --min-replicas 1 \
+          --max-replicas 3 \
+          --replace
+
+        FRONTEND_URL=$(az containerapp show --name frontend-$POSTFIX --resource-group ${{ steps.resource_names.outputs.resource_group_name }} --query properties.configuration.ingress.fqdn -o tsv)
+        echo "frontend_url=https://$FRONTEND_URL" >> $GITHUB_OUTPUT
         
     - name: Test application
       run: |
-        if [[ "${{ steps.app_url.outputs.app_url }}" != "URL not available" ]]; then
-          echo "Testing application at https://${{ steps.app_url.outputs.app_url }}"
-          curl -IL https://${{ steps.app_url.outputs.app_url }}
-        else
-          echo "Application URL not available, skipping test"
-        fi
+        POSTFIX=${{ steps.resource_names.outputs.postfix }}
+        FRONTEND_URL=${{ steps.deploy_frontend.outputs.frontend_url }}
+        
+        echo "Testing application at $FRONTEND_URL"
+        curl -IL $FRONTEND_URL
         
     - name: Deployment Summary
       run: |
-        echo "Deployment completed to environment: ${{ steps.determine_env.outputs.environment }}"
+        POSTFIX=${{ steps.resource_names.outputs.postfix }}
+        
+        echo "=== Deployment Summary ==="
+        echo "Environment: ${{ steps.determine_env.outputs.environment }}"
         echo "Resource Group: ${{ steps.resource_names.outputs.resource_group_name }}"
         echo "Container Registry: ${{ steps.acr.outputs.acr_login_server }}"
-        echo "Application URL: https://${{ steps.app_url.outputs.app_url }}"
+        echo "Frontend URL: ${{ steps.deploy_frontend.outputs.frontend_url }}"
+        echo "Backend URL: ${{ steps.deploy_backend.outputs.backend_url }}"
+        echo "MLflow URL: ${{ steps.deploy_mlflow.outputs.mlflow_url }}"
+        echo "Model Service URL: ${{ steps.deploy_model.outputs.model_url }}"
+        echo "Prometheus URL: ${{ steps.deploy_prometheus.outputs.prometheus_url }}"
+        echo "Grafana URL: ${{ steps.deploy_grafana.outputs.grafana_url }} (admin/admin)"

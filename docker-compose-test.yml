@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # Frontend (Streamlit)
+  frontend:
+    image: ${ACR_LOGIN_SERVER}/frontend-test:latest
+    ports:
+      - "8501:8501"  # Streamlit web UI
+      - "8001:8001"  # Metrics endpoint
+    environment:
+      - BACKEND_URL=http://backend:8000
+      - API_URL=http://backend:8000/predict
+    depends_on:
+      - backend
+
+  # Backend (FastAPI)
+  backend:
+    image: ${ACR_LOGIN_SERVER}/backend-test:latest
+    ports:
+      - "8000:8000"  # API and metrics endpoint
+    environment:
+      - MODEL_SERVICE_URL=http://model_service:8080/invocations
+    depends_on:
+      - model_service
+
+  # Model Service
+  model_service:
+    image: ${ACR_LOGIN_SERVER}/placeholder_model-test:latest
+    ports:
+      - "8080:8080"  # MLflow model serving
+      - "9000:9000"  # Metrics endpoint
+    environment:
+      - MODEL_PATH=/app/models/best_model
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      - mlflow
+
+  # MLflow Service
+  mlflow:
+    image: ${ACR_LOGIN_SERVER}/mlflow-test:latest
+    ports:
+      - "5000:5000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_BACKEND_STORE_URI=/mlflow/mlruns
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
+      - MODEL_OUTPUT_PATH=/app/models/best_model
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: ${ACR_LOGIN_SERVER}/prometheus-test:latest
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend
+      - model_service
+      - frontend
+
+  # Grafana for visualization
+  grafana:
+    image: ${ACR_LOGIN_SERVER}/grafana-test:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+      - GF_LOG_LEVEL=debug
+    depends_on:
+      - prometheus
