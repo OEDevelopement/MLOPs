@@ -35,11 +35,11 @@ jobs:
                 creds: ${{ secrets.AZURE_CREDENTIALS }}
           - name: Set up Azure CLI
             run: |
-                az configure --defaults group=${{ env.RESOURCE_GROUP }}
-                az configure --defaults location=${{ env.LOCATION }}  
+                az configure --defaults group=${{ vars.RESOURCE_GROUP }}
+                az configure --defaults location=${{ vars.LOCATION }}  
           - name: Activate VM
             run: |
-                az vm ${{github.event.inputs.start_stop}} --name ${{ env.VM_NAME }} --resource-group ${{ env.RESOURCE_GROUP }}
+                az vm ${{github.event.inputs.start_stop}} --name ${{ vars.VM_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }}
                 echo "VM activated"
 
     on_start:
@@ -94,9 +94,9 @@ jobs:
                 creds: ${{ secrets.AZURE_CREDENTIALS }}
           - name: Set up Azure CLI
             run: |
-                az configure --defaults group=${{ env.RESOURCE_GROUP }}
-                az configure --defaults location=${{ env.LOCATION }}  
+                az configure --defaults group=${{ vars.RESOURCE_GROUP }}
+                az configure --defaults location=${{ vars.LOCATION }}  
           - name: Activate VM
             run: |
-                az vm ${{github.event.inputs.start_stop}} --name ${{ env.VM_NAME }} --resource-group ${{ env.RESOURCE_GROUP }}
+                az vm ${{github.event.inputs.start_stop}} --name ${{ vars.VM_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }}
                 echo "VM activated"

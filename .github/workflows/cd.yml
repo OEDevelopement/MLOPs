@@ -27,12 +27,12 @@ jobs:
 
           - name: Set up Azure CLI
             run: |
-                az configure --defaults group=${{ env.RESOURCE_GROUP }}
-                az configure --defaults location=${{ env.LOCATION }}  
+                az configure --defaults group=${{ vars.RESOURCE_GROUP }}
+                az configure --defaults location=${{ vars.LOCATION }}  
 
           - name: Activate VM
             run: |
-                az vm start --name ${{ env.VM_NAME }} --resource-group ${{ env.RESOURCE_GROUP }}
+                az vm start --name ${{ vars.VM_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }}
                 echo "VM activated"
 
     deploy:
@@ -53,8 +53,8 @@ jobs:
             run: |
                 ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "cd ${{ secrets.VM_PROJECT_PATH }} && \
                 git pull origin main && \
-                az storage blob download-batch --source ${{ env.CONTAINER }} --account-name ${{ env.STORAGE_ACCOUNT }} --destination /home/azureuser/MLOPs/data/processed
-                az storage blob download-batch --source ${{ env.CONTAINER }} --account-name ${{ env.STORAGE_ACCOUNT }} --destination /home/azureuser/MLOPs/mlflow/data/processed
+                az storage blob download-batch --source ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }} --destination /home/azureuser/MLOPs/data/processed
+                az storage blob download-batch --source ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }} --destination /home/azureuser/MLOPs/mlflow/data/processed
                 docker-compose -f docker-compose-prod.yml down && \
                 docker-compose -f docker-compose-prod.yml up -d --build && \
                 timeout 60 bash -c 'until curl -s http://localhost:8501 > /dev/null; do sleep 5; done' || \
