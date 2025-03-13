@@ -26,7 +26,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Kopiere Skripte
-COPY mlflow_setup.py param_grid_functions.py ./
+COPY . .
 
 # Erstelle Verzeichnisse für MLflow
 RUN mkdir -p /mlflow /app/data /mlflow/model_dockerfile
@@ -41,10 +41,9 @@ CMD mlflow server \
     --host 0.0.0.0 \
     --port 5000 & \
     sleep 15 && \
-    if [ -f "/app/data/processed/processed_data.csv" ]; then \
-        python mlflow_setup.py; \
-    else \
-        echo "Datendatei nicht gefunden"; \
-        find /app/data -type f; \
-    fi && \
+    python validate_raw_data.py && \
+    python process_data.py && \
+    python validate_processed_data.py && \
+    python mlflow_setup.py && \
+    python model_validation.py && \
     tail -f /dev/null

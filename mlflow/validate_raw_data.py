@@ -1,7 +1,7 @@
 import great_expectations as gx
 import pandas as pd
 
-df = pd.read_csv('mlflow/data/raw/adult.csv')
+df = pd.read_csv('data/raw/adult.csv')
 
 context = gx.get_context()
 data_source = context.data_sources.add_pandas(name = "my_pandas_datasource")

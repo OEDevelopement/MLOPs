@@ -25,9 +25,7 @@ services:
 
   # Model Service
   model_service:
-    build: 
-      context: ./model_service
-      dockerfile: Dockerfile
+    build: ./model_service
     ports:
       - "8080:8080"  # MLflow model serving
       - "9000:9000"  # Metrics endpoint
@@ -44,23 +42,20 @@ services:
   mlflow:
     build: ./mlflow
     ports:
-      - "5000:5000"
+      - "5002:5000"
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - MLFLOW_BACKEND_STORE_URI=/mlflow/mlruns
       - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
       - MODEL_OUTPUT_PATH=/app/models/best_model  # Add this to make path explicit
     volumes:
-      - ./data:/app/data
-      - mlflow_data:/mlflow
+      - ./data:/app/mlfow/data
       - ./models:/app/models # Standardized path
     privileged: true
 
   # Prometheus for metrics collection
   prometheus:
-    build:
-      context: ./prometheus
-      dockerfile: Dockerfile
+    build: ./prometheus
     ports:
       - "9090:9090"
     volumes:
@@ -74,9 +69,7 @@ services:
   # Grafana for visualization
 # Grafana for visualization
   grafana:
-    build:
-      context: ./grafana
-      dockerfile: Dockerfile
+    build: ./grafana
     ports:
       - "3000:3000"
     environment:
