@@ -41,50 +41,7 @@ jobs:
           - name: Activate VM
             run: |
                 az vm ${{github.event.inputs.start_stop}} --name ${{ vars.VM_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }}
-                echo "VM activated"
-
-    on_start:
-        runs-on: ubuntu-latest
-        environment: ${{ github.event.inputs.environment || github.ref_name }}
-        needs: start_vm
-        if: github.event.inputs.start_stop == 'start'
-        steps:
-          - name: Checkout code
-            uses: actions/checkout@v3
-    
-          - name: Setup SSH
-            run: |
-                mkdir -p ~/.ssh
-                echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_rsa
-                chmod 600 ~/.ssh/id_rsa
-                ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts  
-
-          - name: run docker
-            run: |
-                ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "cd ${{ secrets.VM_PROJECT_PATH }} && \
-                docker-compose -f docker-compose-prod.yml up -d --build && \
-                echo "Docker containers started"
-
-    on_stop:
-        runs-on: ubuntu-latest
-        environment: ${{ github.event.inputs.environment || github.ref_name }}
-        if: github.event.inputs.start_stop == 'stop'
-        steps:
-          - name: Checkout code
-            uses: actions/checkout@v3
-    
-          - name: Setup SSH
-            run: |
-                mkdir -p ~/.ssh
-                echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_rsa
-                chmod 600 ~/.ssh/id_rsa
-                ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts  
-
-          - name: run docker
-            run: |
-                ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "cd ${{ secrets.VM_PROJECT_PATH }} && \
-                docker-compose -f docker-compose-prod.yml down && \
-                echo "Docker containers stopped"
+                echo "VM activated and docker will start automatic"
     
     stop_vm:
         runs-on: ubuntu-latest
@@ -103,4 +60,5 @@ jobs:
           - name: Activate VM
             run: |
                 az vm ${{github.event.inputs.start_stop}} --name ${{ vars.VM_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }}
-                echo "VM activated"
+                echo "docker stops during shutdown"
+                echo "VM deactivated"
