@@ -24,20 +24,18 @@ The platform includes:
 - Continuous integration and delivery pipelines
 - Model training and experimentation
 - Model registry and versioning
-- A/B testing capabilities
 - Real-time monitoring and metrics visualization
 - Automated retraining workflows
 
-![Architecture Diagram](docs/architecture_diagram.png)
-
 ## 🏗️ Architecture
+
+![image](https://github.com/user-attachments/assets/6f218666-4c3e-4824-9b3c-058735fc1e55)
 
 The platform consists of the following components:
 
 ### 📱 Frontend Service
 - Streamlit-based user interface
 - Interactive form for income predictions
-- Real-time system monitoring dashboard
 
 ### 🔌 Backend Service
 - FastAPI application for prediction serving
@@ -54,7 +52,7 @@ The platform consists of the following components:
 - Serving predictions via REST API
 - Metrics collection for model performance
 
-### 📈 Monitoring Stack (LGTM)
+### 📈 Monitoring Stack 
 - Prometheus for metrics collection
 - Grafana for visualization dashboards
 - Real-time performance monitoring
@@ -64,7 +62,7 @@ The platform consists of the following components:
 - **Frontend**: Streamlit
 - **Backend**: FastAPI
 - **Model Training**: Scikit-learn, MLflow
-- **Deployment**: Docker, Azure Container Apps
+- **Deployment**: Docker, Azure
 - **CI/CD**: GitHub Actions
 - **Monitoring**: Prometheus, Grafana
 - **Infrastructure**: Azure Cloud
@@ -171,7 +169,6 @@ docker-compose exec mlflow python mlflow_setup.py
 The monitoring stack provides real-time insights into:
 
 - System health and performance
-- Model accuracy and drift
 - Prediction latency
 - User engagement metrics
 
@@ -206,28 +203,6 @@ mlops-income-prediction/
 | `MODEL_PATH` | Path to the deployed model | `/app/models/best_model` |
 | `BACKEND_URL` | URL for the backend service | `http://backend:8000` |
 | `API_URL` | URL for the prediction API | `http://backend:8000/predict` |
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a pull request
-
-## 📜 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 📚 Documentation
-
-For more detailed documentation, see the `docs/` directory:
-
-- [Architecture Overview](docs/architecture.md)
-- [Development Guide](docs/development.md)
-- [Deployment Guide](docs/deployment.md)
-- [Model Training Guide](docs/model_training.md)
-- [Monitoring Guide](docs/monitoring.md)
 
 ## 🙏 Acknowledgements
 
