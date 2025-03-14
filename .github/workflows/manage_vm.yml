@@ -46,7 +46,6 @@ jobs:
     stop_vm:
         runs-on: ubuntu-latest
         environment: ${{ github.event.inputs.environment || github.ref_name }}
-        needs: on_stop
         if: github.event.inputs.start_stop == 'stop'
         steps:
           - name: Azure Login
