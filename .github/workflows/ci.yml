@@ -85,6 +85,7 @@ jobs:
           # Verwende pip caching für schnellere Installation
           pip install --cache-dir ~/.cache/pip -r requirements.txt
           pip install --cache-dir ~/.cache/pip pytest pytest-cov
+          pip install kaggle
   
       - name: Process newest data
         run: |
