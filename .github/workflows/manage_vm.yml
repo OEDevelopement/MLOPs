@@ -60,4 +60,5 @@ jobs:
             run: |
                 az vm ${{github.event.inputs.start_stop}} --name ${{ vars.VM_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }}
                 echo "docker stops during shutdown"
+                az vm deallocate --name ${{ vars.VM_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }}
                 echo "VM deactivated"

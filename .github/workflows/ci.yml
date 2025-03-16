@@ -85,6 +85,18 @@ jobs:
           # Verwende pip caching für schnellere Installation
           pip install --cache-dir ~/.cache/pip -r requirements.txt
           pip install --cache-dir ~/.cache/pip pytest pytest-cov
+  
+      - name: Process newest data
+        run: |
+            sudo -p mkdir MLOPs/data
+            sudo -p mkdir MLOPs/data/raw
+            sudo -p mkdir MLOPs/data/processed
+            sudo -p mkdir MLOPs/mlflow/data
+            sudo -p mkdir MLOPs/mlflow/data/processed
+            !kaggle datasets download -d wenruliu/adult-income-dataset -p ../data/raw
+            python mlflow/validate_raw_data.py
+            python mlflow/process_data.py
+            python mlflow/validate_processed_data.py
 
       - name: Install Docker Compose
         run: |
@@ -159,7 +171,7 @@ jobs:
 
       - name: Wait for services to start
         run: |
-          sleep 30
+          sleep 300
 
       - name: Run MLFlow tests
         run: |
