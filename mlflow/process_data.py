@@ -1,13 +1,4 @@
 import pandas as pd
-import zipfile
-import os
-
-# unpack ZIP-file
-with zipfile.ZipFile("data/raw/adult-income-dataset.zip", "r") as zip_ref:
-    zip_ref.extractall("data/raw")
-
-# delete ZIP-file
-os.remove('data/raw/adult-income-dataset.zip')
 
 df = pd.read_csv('data/raw/adult.csv')
 
