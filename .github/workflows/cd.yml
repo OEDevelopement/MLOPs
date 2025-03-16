@@ -49,6 +49,12 @@ jobs:
                 pip install kaggle
                 pip install -r mlflow/requirements.txt
                 
+          - name: Set up Kaggle credentials
+            run: |
+              mkdir -p ~/.kaggle
+              echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_TOKEN }}\"}" > ~/.kaggle/kaggle.json
+              chmod 600 ~/.kaggle/kaggle.json
+                
           - name: Process newest data
             run: |
                 sudo mkdir -p MLOPs/data
