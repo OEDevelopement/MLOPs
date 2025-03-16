@@ -1,0 +1,97 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches: 
+      - TEST
+      - PROD
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'TEST'
+        type: choice
+        options:
+          - TEST
+          - PROD
+
+jobs:
+    start_vm:
+        runs-on: ubuntu-latest
+        environment: ${{ github.event.inputs.environment || github.ref_name }}
+        steps:
+          - name: Azure Login
+            uses: azure/login@v1
+            with:
+                creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+          - name: Set up Azure CLI
+            run: |
+                az configure --defaults group=${{ vars.RESOURCE_GROUP }}
+                az configure --defaults location=${{ vars.LOCATION }}  
+
+          - name: Activate VM
+            run: |
+                az vm start --name ${{ vars.VM_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }}
+                echo "VM activated"
+
+    deploy:
+        runs-on: ubuntu-latest
+        environment: ${{ github.event.inputs.environment || github.ref_name }}
+        needs: start_vm
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v3
+
+          - name: Install Dependencies
+            run: |
+                pip install kaggle
+                pip install -r mlflow/requirements.txt
+                
+          - name: Set up Kaggle credentials
+            run: |
+              mkdir -p ~/.kaggle
+              echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_TOKEN }}\"}" > ~/.kaggle/kaggle.json
+              chmod 600 ~/.kaggle/kaggle.json
+                
+          - name: Process newest data
+            run: |
+                sudo mkdir -p MLOPs/data
+                sudo mkdir -p MLOPs/data/raw
+                sudo mkdir -p MLOPs/data/processed
+                sudo mkdir -p MLOPs/mlflow/data
+                sudo mkdir -p MLOPs/mlflow/data/processed
+                kaggle datasets download -d wenruliu/adult-income-dataset -p ../data/raw
+                python mlflow/process_data.py
+                python mlflow/validate_raw_data.py
+                python mlflow/validate_processed_data.py
+                
+          - name: Azure Login
+            uses: azure/login@v1
+            with:
+                creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+          - name: Upload data to Azure Storage
+            run: |
+                az storage blob upload-batch --source MLOPs/mlflow/data/processed --destination ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }}
+                az storage blob upload-batch --source MLOPs/data/raw --destination ${{ vars.CONTAINER_RAW }} --account-name ${{ vars.STORAGE_ACCOUNT }}
+
+          - name: Setup SSH
+            run: |
+                mkdir -p ~/.ssh
+                echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_rsa
+                chmod 600 ~/.ssh/id_rsa
+                ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+        
+          - name: Deploy to Azure VM
+            run: |
+                ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "cd ${{ secrets.VM_PROJECT_PATH }} && \
+                git pull origin ${{ github.event.inputs.environment || github.ref_name }} && \
+                az login --identity && \
+                az storage blob download-batch --source ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }} -destination /home/azureuser/MLOPs/data/processed --ovwerwrite true && \
+                az storage blob download-batch --source ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }} --destination /home/azureuser/MLOPs/mlflow/data/processed --ovwerwrite true && \
+                az storage blob download-batch --source ${{ vars.CONTAINER_RAW }} --account-name ${{ vars.STORAGE_ACCOUNT }} --destination /home/azureuser/MLOPs/data/raw --ovwerwrite true && \
+                docker-compose -f docker-compose.yml down && \
+                docker-compose -f docker-compose.yml up -d --build "
+                echo "Deployment completed"

@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # Frontend (Streamlit)
+  frontend:
+    build: ./frontend
+    ports:
+      - "8501:8501"  # Streamlit web UI
+      - "8001:8001"  # Metrics endpoint (changed from 8000 to 8001)
+    environment:
+      - BACKEND_URL=http://backend:8000
+      - API_URL=http://backend:8000/predict
+    depends_on:
+      - backend
+
+  # Backend (FastAPI)
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"  # API and metrics endpoint
+    environment:
+      - MODEL_SERVICE_URL=http://model_service:8080/invocations
+    depends_on:
+      - model_service
+
+  # Model Service
+  model_service:
+    build: ./model_service
+    ports:
+      - "8080:8080"  # MLflow model serving
+      - "9000:9000"  # Metrics endpoint
+    volumes:
+      - ./models:/app/models  # Standardized path
+    environment:
+      - MODEL_PATH=/app/models/best_model
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      - mlflow
+    restart: on-failure
+
+  # MLflow Service
+  mlflow:
+    build: ./mlflow
+    ports:
+      - "5002:5000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_BACKEND_STORE_URI=/mlflow/mlruns
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
+      - MODEL_OUTPUT_PATH=/app/models/best_model  # Add this to make path explicit
+    volumes:
+      - ./data:/app/mlfow/data
+      - ./models:/app/models # Standardized path
+    privileged: true
+
+  # Prometheus for metrics collection
+  prometheus:
+    build: ./prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+    restart: always
+    depends_on:
+      - backend
+      - model_service
+      - frontend
+
+  # Grafana for visualization
+# Grafana for visualization
+  grafana:
+    build: ./grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+      - GF_LOG_LEVEL=debug
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    restart: always
+
+volumes:
+  mlflow_data:

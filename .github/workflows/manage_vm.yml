@@ -1,0 +1,64 @@
+name: Start / Stop VMs
+
+on:
+  push:
+    branches: 
+      - TEST
+      - PROD
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to manage'
+        required: true
+        default: 'TEST'
+        type: choice
+        options:
+          - TEST
+          - PROD
+      start_stop:
+        description: 'Start or stop the VM'
+        required: true
+        default: 'start'
+        type: choice
+        options:
+          - start
+          - stop
+
+jobs:
+    start_vm:
+        runs-on: ubuntu-latest
+        environment: ${{ github.event.inputs.environment || github.ref_name }}
+        if: github.event.inputs.start_stop == 'start'
+        steps:
+          - name: Azure Login
+            uses: azure/login@v1
+            with:
+                creds: ${{ secrets.AZURE_CREDENTIALS }}
+          - name: Set up Azure CLI
+            run: |
+                az configure --defaults group=${{ vars.RESOURCE_GROUP }}
+                az configure --defaults location=${{ vars.LOCATION }}  
+          - name: Activate VM
+            run: |
+                az vm ${{github.event.inputs.start_stop}} --name ${{ vars.VM_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }}
+                echo "VM activated and docker will start automatic"
+    
+    stop_vm:
+        runs-on: ubuntu-latest
+        environment: ${{ github.event.inputs.environment || github.ref_name }}
+        if: github.event.inputs.start_stop == 'stop'
+        steps:
+          - name: Azure Login
+            uses: azure/login@v1
+            with:
+                creds: ${{ secrets.AZURE_CREDENTIALS }}
+          - name: Set up Azure CLI
+            run: |
+                az configure --defaults group=${{ vars.RESOURCE_GROUP }}
+                az configure --defaults location=${{ vars.LOCATION }}  
+          - name: Activate VM
+            run: |
+                az vm ${{github.event.inputs.start_stop}} --name ${{ vars.VM_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }}
+                echo "docker stops during shutdown"
+                az vm deallocate --name ${{ vars.VM_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }}
+                echo "VM deactivated"

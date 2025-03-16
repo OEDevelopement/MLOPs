@@ -1,0 +1,6 @@
+uvicorn[standard]
+fastapi
+requests
+prometheus-fastapi-instrumentator
+pydantic>=1.8.0
+python-multipart

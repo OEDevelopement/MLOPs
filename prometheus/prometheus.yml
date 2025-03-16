@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'backend'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['backend:8000']
+    metrics_path: /metrics
+
+  - job_name: 'model_service'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['model_service:9000']
+    metrics_path: /metrics
+
+  - job_name: 'frontend'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['frontend:8001']  # Changed from 8501 to 8001 to match the metrics port
+    metrics_path: /metrics
+
+  - job_name: 'prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['localhost:9090']
