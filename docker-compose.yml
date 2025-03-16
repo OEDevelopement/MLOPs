@@ -5,32 +5,34 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "8501:8501"  # Streamlit web UI
-      - "8001:8001"  # Metrics endpoint (changed from 8000 to 8001)
+      - "8501:8501"
+      - "8001:8001"
     environment:
       - BACKEND_URL=http://backend:8000
       - API_URL=http://backend:8000/predict
     depends_on:
       - backend
+    restart: on-failure
 
   # Backend (FastAPI)
   backend:
     build: ./backend
     ports:
-      - "8000:8000"  # API and metrics endpoint
+      - "8000:8000"
     environment:
       - MODEL_SERVICE_URL=http://model_service:8080/invocations
     depends_on:
       - model_service
+    restart: on-failure
 
   # Model Service
   model_service:
     build: ./model_service
     ports:
-      - "8080:8080"  # MLflow model serving
-      - "9000:9000"  # Metrics endpoint
+      - "8080:8080" 
+      - "9000:9000"
     volumes:
-      - ./models:/app/models  # Standardized path
+      - ./models:/app/models
     environment:
       - MODEL_PATH=/app/models/best_model
       - MLFLOW_TRACKING_URI=http://mlflow:5000
@@ -47,11 +49,11 @@ services:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - MLFLOW_BACKEND_STORE_URI=/mlflow/mlruns
       - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
-      - MODEL_OUTPUT_PATH=/app/models/best_model  # Add this to make path explicit
+      - MODEL_OUTPUT_PATH=/app/models/best_model 
     volumes:
-      - ./data:/app/mlfow/data
-      - ./models:/app/models # Standardized path
-    privileged: true
+      - ./data:/app/mlflow/data
+      - ./models:/app/models
+    restart: on-failure
 
   # Prometheus for metrics collection
   prometheus:
@@ -66,7 +68,6 @@ services:
       - model_service
       - frontend
 
-  # Grafana for visualization
 # Grafana for visualization
   grafana:
     build: ./grafana
@@ -84,6 +85,3 @@ services:
     depends_on:
       - prometheus
     restart: always
-
-volumes:
-  mlflow_data:
