@@ -89,11 +89,13 @@ jobs:
                 ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "cd ${{ secrets.VM_PROJECT_PATH }} && \
                 sudo chown -R azureuser:azureuser /home/azureuser/MLOPs/data/raw && \
                 sudo chmod -R 755 /home/azureuser/MLOPs/data && \
-                git pull origin ${{ github.event.inputs.environment || github.ref_name }} && \
+                git stash  && \
+                git checkout origin ${{ github.event.inputs.environment || github.ref_name }} && \
+                git pull  && \
                 az login --identity && \
                 az storage blob download-batch --source ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }} -destination /home/azureuser/MLOPs/data/processed --ovwerwrite true && \
                 az storage blob download-batch --source ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }} --destination /home/azureuser/MLOPs/mlflow/data/processed --ovwerwrite true && \
                 az storage blob download-batch --source ${{ vars.CONTAINER_RAW }} --account-name ${{ vars.STORAGE_ACCOUNT }} --destination /home/azureuser/MLOPs/data/raw --ovwerwrite true && \
-                docker-compose -f docker-compose.yml down && \
-                docker-compose -f docker-compose.yml up -d --build "
+                docker-compose down && \
+                docker-compose up -d --build "
                 echo "Deployment completed"
