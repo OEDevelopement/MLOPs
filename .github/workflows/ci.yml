@@ -45,6 +45,12 @@ jobs:
           pip install -r requirements.txt
           pip install flake8 bandit black isort pytest pytest-cov mypy
 
+      - name: Set up Kaggle credentials
+        run: |
+          mkdir -p ~/.kaggle
+          echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
+
       - name: Syntax check with flake8
         run: |
           flake8 backend/ frontend/ mlflow/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
