@@ -87,6 +87,8 @@ jobs:
           - name: Deploy to Azure VM
             run: |
                 ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "cd ${{ secrets.VM_PROJECT_PATH }} && \
+                sudo chown -R azureuser:azureuser /home/azureuser/MLOPs/data/raw && \
+                sudo chmod -R 755 /home/azureuser/MLOPs/data && \
                 git pull origin ${{ github.event.inputs.environment || github.ref_name }} && \
                 az login --identity && \
                 az storage blob download-batch --source ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }} -destination /home/azureuser/MLOPs/data/processed --ovwerwrite true && \
