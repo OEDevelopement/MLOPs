@@ -90,7 +90,7 @@ jobs:
                 sudo chown -R azureuser:azureuser /home/azureuser/MLOPs/data/raw && \
                 sudo chmod -R 755 /home/azureuser/MLOPs/data && \
                 git stash  && \
-                git checkout origin ${{ github.event.inputs.environment || github.ref_name }} && \
+                git checkout ${{ github.event.inputs.environment || github.ref_name }} && \
                 git pull  && \
                 az login --identity && \
                 az storage blob download-batch --source ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }} -destination /home/azureuser/MLOPs/data/processed --ovwerwrite true && \
