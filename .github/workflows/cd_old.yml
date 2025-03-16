@@ -1,10 +1,6 @@
 name: CD Pipeline
 
 on:
-  push:
-    branches: 
-      - TEST
-      - PROD
   workflow_dispatch:
     inputs:
       environment:

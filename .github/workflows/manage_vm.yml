@@ -1,14 +1,10 @@
 name: Start / Stop VMs
 
 on:
-  push:
-    branches: 
-      - TEST
-      - PROD
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to manage'
+        description: 'VM to start / stop'
         required: true
         default: 'TEST'
         type: choice

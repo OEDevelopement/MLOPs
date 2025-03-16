@@ -57,12 +57,10 @@ jobs:
                 
           - name: Process newest data
             run: |
-                sudo mkdir -p MLOPs/data
-                sudo mkdir -p MLOPs/data/raw
-                sudo mkdir -p MLOPs/data/processed
                 sudo mkdir -p MLOPs/mlflow/data
                 sudo mkdir -p MLOPs/mlflow/data/processed
-                kaggle datasets download -d wenruliu/adult-income-dataset -p ../data/raw
+                sudo mkdir -p MLOPs/mlflow/data/raw
+                kaggle datasets download -d wenruliu/adult-income-dataset -p ../mlflow/data/raw
                 python mlflow/process_data.py
                 python mlflow/validate_raw_data.py
                 python mlflow/validate_processed_data.py
@@ -89,13 +87,12 @@ jobs:
                 ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "cd ${{ secrets.VM_PROJECT_PATH }} && \
                 sudo chown -R azureuser:azureuser /home/azureuser/MLOPs/data/raw && \
                 sudo chmod -R 755 /home/azureuser/MLOPs/data && \
-                git stash  && \
+                git restore  && \
                 git checkout ${{ github.event.inputs.environment || github.ref_name }} && \
                 git pull  && \
                 az login --identity && \
-                az storage blob download-batch --source ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }} -destination /home/azureuser/MLOPs/data/processed --ovwerwrite true && \
                 az storage blob download-batch --source ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }} --destination /home/azureuser/MLOPs/mlflow/data/processed --ovwerwrite true && \
-                az storage blob download-batch --source ${{ vars.CONTAINER_RAW }} --account-name ${{ vars.STORAGE_ACCOUNT }} --destination /home/azureuser/MLOPs/data/raw --ovwerwrite true && \
+                az storage blob download-batch --source ${{ vars.CONTAINER_RAW }} --account-name ${{ vars.STORAGE_ACCOUNT }} --destination /home/azureuser/MLOPs/mlflow/data/raw --ovwerwrite true && \
                 docker-compose down && \
-                docker-compose up -d --build "
+                docker-compose up -d --build"
                 echo "Deployment completed"
