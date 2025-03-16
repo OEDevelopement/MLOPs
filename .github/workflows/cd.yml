@@ -63,8 +63,8 @@ jobs:
                 sudo mkdir -p MLOPs/mlflow/data
                 sudo mkdir -p MLOPs/mlflow/data/processed
                 kaggle datasets download -d wenruliu/adult-income-dataset -p ../data/raw
-                python mlflow/validate_raw_data.py
                 python mlflow/process_data.py
+                python mlflow/validate_raw_data.py
                 python mlflow/validate_processed_data.py
                 
           - name: Azure Login
