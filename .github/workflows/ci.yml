@@ -115,15 +115,11 @@ jobs:
 
       - name: Run MLFlow tests
         run: |
-          pytest tests/test_mlflow.py -v
+          pytest mlflow/test_mlflow.py -v
 
       - name: Run Backend tests
         run: |
-          pytest tests/test_backend.py -v
-
-      - name: Run Frontend tests
-        run: |
-          pytest tests/test_frontend.py -v
+          pytest backend/test_backend.py -v
 
       - name: Run all tests with coverage
         run: |
