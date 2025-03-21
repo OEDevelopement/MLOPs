@@ -86,7 +86,7 @@ jobs:
             sudo mkdir -p MLOPs/mlflow/data
             sudo mkdir -p MLOPs/mlflow/data/processed
             sudo mkdir -p MLOPs/mlflow/data/raw
-            kaggle datasets download -d wenruliu/adult-income-dataset -p ../mlflow/data/raw
+            kaggle datasets download -d wenruliu/adult-income-dataset -p ./mlflow/data/raw
             python mlflow/unpack_zip.py
             python mlflow/validate_raw_data.py
             python mlflow/process_data.py
@@ -115,15 +115,11 @@ jobs:
 
       - name: Run MLFlow tests
         run: |
-          pytest tests/test_mlflow.py -v
+          pytest mlflow/test_mlflow.py -v
 
       - name: Run Backend tests
         run: |
-          pytest tests/test_backend.py -v
-
-      - name: Run Frontend tests
-        run: |
-          pytest tests/test_frontend.py -v
+          pytest backend/test_backend.py -v
 
       - name: Run all tests with coverage
         run: |
