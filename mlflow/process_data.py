@@ -1,6 +1,6 @@
 import pandas as pd
 
-df = pd.read_csv('data/raw/adult.csv')
+df = pd.read_csv('../data/raw/adult.csv')
 
 # simplifying occupation
 df['occupation'] = df['occupation'].apply(lambda wert: 
@@ -69,4 +69,4 @@ df = df[~df.isin(['?']).any(axis=1)].copy()
 df.drop(columns=['education', 'fnlwgt', 'native-country', 'capital-gain', 'capital-loss', 'gender', 'income', 
                  'race', 'capital-net'], inplace=True)
 
-df.to_csv('data/processed/processed_data.csv', index=False)
+df.to_csv('../data/processed/processed_data.csv', index=False)
