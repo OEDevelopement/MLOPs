@@ -37,7 +37,11 @@ jobs:
           - name: Activate VM
             run: |
                 az vm ${{github.event.inputs.start_stop}} --name ${{ vars.VM_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }}
-                echo "VM activated and docker will start automatic"
+                ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "cd ${{ secrets.VM_PROJECT_PATH }} && \
+                sudo chown -R azureuser:azureuser /home/azureuser/MLOPs/data/raw && \
+                sudo chmod -R 755 /home/azureuser/MLOPs/data && \
+                docker-compose up -d --build"
+                echo "vm activated & docker running"
     
     stop_vm:
         runs-on: ubuntu-latest
