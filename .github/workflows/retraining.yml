@@ -40,10 +40,11 @@ jobs:
 
       - name: Download and Process New Data
         run: |
-          mkdir -p ./mlflow/data
-          mkdir -p ./mlflow/data/processed
-          mkdir -p ./mlflow/data/raw
-          kaggle datasets download -d wenruliu/adult-income-dataset -p ./mlflow/data/raw
+          mkdir -p MLOPs/mlflow/data
+          mkdir -p MLOPs/mlflow/data/processed
+          mkdir -p MLOPs/mlflow/data/raw
+          sudo chmod -R 755 MLOPs/mlflow/data
+          kaggle datasets download -d wenruliu/adult-income-dataset -p MLOPs/mlflow/data/raw
           python mlflow/unpack_zip.py
           python mlflow/validate_raw_data.py
           python mlflow/process_data.py

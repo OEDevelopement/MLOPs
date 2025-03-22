@@ -87,11 +87,13 @@ jobs:
             sudo mkdir -p MLOPs/mlflow/data/processed
             sudo mkdir -p MLOPs/mlflow/data/raw
             sudo chmod -R 755 MLOPs/mlflow/data
-            kaggle datasets download -d wenruliu/adult-income-dataset -p MLOPs/mlflow/data/raw
-            python mlflow/unpack_zip.py
-            python mlflow/validate_raw_data.py
-            python mlflow/process_data.py
-            python mlflow/validate_processed_data.py
+            sudo ls
+            sudo ll MLOPs/mlflow/          
+            kaggle datasets download -d wenruliu/adult-income-dataset -p ./mlflow/data/raw
+            sudo python mlflow/unpack_zip.py
+            sudo python mlflow/validate_raw_data.py
+            sudo python mlflow/process_data.py
+            sudo python mlflow/validate_processed_data.py
 
       - name: Install Docker Compose
         run: |
