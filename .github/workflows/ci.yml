@@ -85,7 +85,7 @@ jobs:
         run: |
             sudo mkdir -p mlflow/data
             sudo mkdir -p mlflow/data/processed
-            sudo mkdir -p Mmlflow/data/raw
+            sudo mkdir -p mlflow/data/raw
             sudo chmod -R 755 mlflow/data
             sudo ls mlflow/        
             sudo kaggle datasets download -d wenruliu/adult-income-dataset -p mlflow/data/raw
