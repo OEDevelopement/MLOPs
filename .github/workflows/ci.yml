@@ -86,6 +86,8 @@ jobs:
             sudo mkdir -p ./mlflow/data
             sudo mkdir -p ./mlflow/data/processed
             sudo mkdir -p ./mlflow/data/raw
+            chmod -R 755 ./mlflow/data
+            ll
             kaggle datasets download -d wenruliu/adult-income-dataset -p ./mlflow/data/raw
             python mlflow/unpack_zip.py
             python mlflow/validate_raw_data.py
