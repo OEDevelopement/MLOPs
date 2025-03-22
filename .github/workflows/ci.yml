@@ -83,12 +83,11 @@ jobs:
           
       - name: Process newest data
         run: |
-            sudo mkdir -p MLOPs/mlflow/data
-            sudo mkdir -p MLOPs/mlflow/data/processed
-            sudo mkdir -p MLOPs/mlflow/data/raw
-            sudo chmod -R 755 MLOPs/mlflow/data
-            sudo ls
-            sudo ll MLOPs/mlflow/          
+            sudo mkdir -p mlflow/data
+            sudo mkdir -p mlflow/data/processed
+            sudo mkdir -p Mmlflow/data/raw
+            sudo chmod -R 755 mlflow/data
+            sudo ls mlflow/        
             kaggle datasets download -d wenruliu/adult-income-dataset -p ./mlflow/data/raw
             sudo python mlflow/unpack_zip.py
             sudo python mlflow/validate_raw_data.py
