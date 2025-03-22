@@ -90,7 +90,7 @@ jobs:
                 ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "cd ${{ secrets.VM_PROJECT_PATH }} && \
                 sudo chown -R azureuser:azureuser /home/azureuser/MLOPs && \
                 sudo chmod -R 755 /home/azureuser/MLOPs && \
-                git restore  && \
+                git restore . && \
                 git checkout ${{ github.event.inputs.environment || github.ref_name }} && \
                 git pull  && \
                 az login --identity && \
