@@ -57,10 +57,12 @@ jobs:
                 
           - name: Process newest data
             run: |
-                sudo mkdir -p MLOPs/mlflow/data
-                sudo mkdir -p MLOPs/mlflow/data/processed
-                sudo mkdir -p MLOPs/mlflow/data/raw
-                kaggle datasets download -d wenruliu/adult-income-dataset -p ../mlflow/data/raw
+                sudo mkdir -p mlflow/data
+                sudo mkdir -p mlflow/data/processed
+                sudo mkdir -p mlflow/data/raw
+                sudo chmod -R 755 mlflow/data
+                sudo chown -R $USER:$USER mlflow   
+                kaggle datasets download -d wenruliu/adult-income-dataset -p mlflow/data/raw
                 python mlflow/unpack_zip.py
                 python mlflow/validate_raw_data.py
                 python mlflow/process_data.py
@@ -73,8 +75,8 @@ jobs:
         
           - name: Upload data to Azure Storage
             run: |
-                az storage blob upload-batch --source MLOPs/mlflow/data/processed --destination ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }}
-                az storage blob upload-batch --source MLOPs/data/raw --destination ${{ vars.CONTAINER_RAW }} --account-name ${{ vars.STORAGE_ACCOUNT }}
+                az storage blob upload-batch --source mlflow/data/processed --destination ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }}
+                az storage blob upload-batch --source mlflow/data/raw --destination ${{ vars.CONTAINER_RAW }} --account-name ${{ vars.STORAGE_ACCOUNT }}
 
           - name: Setup SSH
             run: |
@@ -86,8 +88,8 @@ jobs:
           - name: Deploy to Azure VM
             run: |
                 ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "cd ${{ secrets.VM_PROJECT_PATH }} && \
-                sudo chown -R azureuser:azureuser /home/azureuser/MLOPs/data/raw && \
-                sudo chmod -R 755 /home/azureuser/MLOPs/data && \
+                sudo chown -R azureuser:azureuser /home/azureuser/MLOPs && \
+                sudo chmod -R 755 /home/azureuser/MLOPs && \
                 git restore  && \
                 git checkout ${{ github.event.inputs.environment || github.ref_name }} && \
                 git pull  && \

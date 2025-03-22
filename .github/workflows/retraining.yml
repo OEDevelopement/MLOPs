@@ -40,10 +40,12 @@ jobs:
 
       - name: Download and Process New Data
         run: |
-          mkdir -p MLOPs/mlflow/data
-          mkdir -p MLOPs/mlflow/data/processed
-          mkdir -p MLOPs/mlflow/data/raw
-          kaggle datasets download -d wenruliu/adult-income-dataset -p MLOPs/mlflow/data/raw
+          mkdir -p mlflow/data
+          mkdir -p mlflow/data/processed
+          mkdir -p mlflow/data/raw
+          sudo chmod -R 755 mlflow/data
+          sudo chown -R $USER:$USER mlflow
+          kaggle datasets download -d wenruliu/adult-income-dataset -p mlflow/data/raw
           python mlflow/unpack_zip.py
           python mlflow/validate_raw_data.py
           python mlflow/process_data.py
@@ -56,8 +58,8 @@ jobs:
 
       - name: Upload Data to Azure Storage
         run: |
-          az storage blob upload-batch --source MLOPs/mlflow/data/processed --destination ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }}
-          az storage blob upload-batch --source MLOPs/mlflow/data/raw --destination ${{ vars.CONTAINER_RAW }} --account-name ${{ vars.STORAGE_ACCOUNT }}
+          az storage blob upload-batch --source mlflow/data/processed --destination ${{ vars.CONTAINER }} --account-name ${{ vars.STORAGE_ACCOUNT }}
+          az storage blob upload-batch --source mlflow/data/raw --destination ${{ vars.CONTAINER_RAW }} --account-name ${{ vars.STORAGE_ACCOUNT }}
           echo "New data processed and uploaded to Azure Storage"
 
   start_vm:
