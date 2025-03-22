@@ -38,8 +38,8 @@ jobs:
             run: |
                 az vm ${{github.event.inputs.start_stop}} --name ${{ vars.VM_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }}
                 ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "cd ${{ secrets.VM_PROJECT_PATH }} && \
-                sudo chown -R azureuser:azureuser /home/azureuser/MLOPs/data/raw && \
-                sudo chmod -R 755 /home/azureuser/MLOPs/data && \
+                sudo chown -R azureuser:azureuser /home/azureuser/MLOPs&& \
+                sudo chmod -R 755 /home/azureuser/MLOPs && \
                 docker-compose up -d --build"
                 echo "vm activated & docker running"
     
