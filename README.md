@@ -81,8 +81,8 @@ The platform consists of the following components, to be deployed locally and on
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/mlops-income-prediction.git
-   cd mlops-income-prediction
+   git clone https://github.com/OEDevelopement/MLOPs.git
+   cd MLOPs
    ```
 
 2. Create a virtual environment:
