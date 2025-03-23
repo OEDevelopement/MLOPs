@@ -31,7 +31,7 @@ The platform includes:
 
 ![image](https://github.com/user-attachments/assets/6f218666-4c3e-4824-9b3c-058735fc1e55)
 
-The platform consists of the following components:
+The platform consists of the following components, to be deployed locally and on Azure Virtual Machines:
 
 ### 📱 Frontend Service
 - Streamlit-based user interface
@@ -62,6 +62,7 @@ The platform consists of the following components:
 - **Frontend**: Streamlit
 - **Backend**: FastAPI
 - **Model Training**: Scikit-learn, MLflow
+- **Data Validation**: Great Expectations
 - **Deployment**: Docker, Azure
 - **CI/CD**: GitHub Actions
 - **Monitoring**: Prometheus, Grafana
@@ -70,8 +71,8 @@ The platform consists of the following components:
 ## 📋 Prerequisites
 
 - Docker and Docker Compose
-- Azure CLI
-- GitHub account for CI/CD
+- Azure CLI (only for recreating Azure Deployment)
+- GitHub account for CI/CD (will only work until 23.03.2025 due to the expiry of the Azure subscription)
 - Python 3.9+
 
 ## 🔧 Installation
@@ -94,13 +95,23 @@ The platform consists of the following components:
    ```bash
    pip install -r requirements.txt
    ```
+4. Download, unpack and process the dataset
+   ```bash
+   mkdir mlflow/data/raw
+   mkdir mlflow/data/processed
+   kaggle datasets download -d wenruliu/adult-income-dataset -p mlflow/data/raw
+   python mlflow/unpack_zip.py
+   python mlflow/validate_raw_data.py
+   python mlflow/process_data.py
+   python mlflow/validate_processed_data.py
+   ```   
 
-4. Start the development environment:
+5. Start the development environment:
    ```bash
    docker-compose up
    ```
 
-5. Access the application:
+6. Access the application:
    - Frontend: http://localhost:8501
    - Backend API: http://localhost:8000
    - MLflow UI: http://localhost:5000
@@ -109,19 +120,8 @@ The platform consists of the following components:
 
 ### Production Deployment
 
-The platform is designed to be deployed to Azure Container Apps:
-
-1. Configure your Azure credentials:
-   ```bash
-   az login
-   ```
-
-2. Use the deployment script:
-   ```bash
-   ./DeployContainerAppDEV  # For DEV environment
-   ```
-
-Or use the GitHub Actions workflow for automatic deployment.
+The platform is designed to be deployed to Azure Virutal Machines
+by usinf the GitHub Actions workflow for automatic (Merge/Push to TEST ord PROD) or manual deployment.
 
 ## 🔄 CI/CD Workflows
 
@@ -129,22 +129,23 @@ Or use the GitHub Actions workflow for automatic deployment.
 
 The CI pipeline runs on pull requests to DEV and TEST branches, performing:
 
-- Code quality checks (flake8, black, mypy, bandit)
-- Unit and integration tests
-- Security scanning
-- Docker image builds
+- Code quality & Secrutiy checks (flake8, black, mypy, bandit)
+- Download, process and validate kaggle dataset
+- Starting docker with docker-compose up build
+- Unit / integration tests
+- On PR to DEV: Auto Merge after successful run 
+
 
 ### Continuous Deployment (CD)
 
-The CD pipeline automatically deploys to:
+The CD pipeline automatically deploys to the matching VM:
 
-- DEV environment: On merge to DEV branch
 - TEST environment: On merge to TEST branch
 - PROD environment: On merge to PROD branch
 
 ## 🧪 Model Training
 
-The model training pipeline includes:
+The model training includes:
 
 1. Data preprocessing
 2. Hyperparameter optimization across multiple algorithms:
@@ -154,29 +155,32 @@ The model training pipeline includes:
 3. Model evaluation and selection
 4. Automated versioning in MLflow
 
-To manually trigger model retraining:
+The model training is done by the mlflow_setup.py file.
 
-```bash
-# Using GitHub Actions
-gh workflow run retraining.yml
+This Training starts automatic when starting the docker architecture and will take about 5 - 10 minutes. During this process the for the first time, the frontend will provide an error. For the next time, die last model is saved persistentaly and will be used until the the retraining is done and a new model is saved.
 
-# Or locally
-docker-compose exec mlflow python mlflow_setup.py
-```
+The automated retraining is triggered by a GitHub Action Cron Job (Sun, 00:00) wich will run the retraining.yml file. This retraining downloads, processes and saves the newest data and download it on the VM. Afterwards the relating containers are restarted.
+
 
 ## 📊 Monitoring
 
 The monitoring stack provides real-time insights into:
 
-- System health and performance
-- Prediction latency
-- User engagement metrics
+- Service health status indicators
+- API call rates and response times
+- Active request gauges
+- Prediction success rates
+- Error tracking visualizations
 
 Access the Grafana dashboard at http://localhost:3000 using:
 - Username: admin
 - Password: admin
 
+**Note**: Sometimes there is a bug and you need to edit each visual (hover over it and press e).
+
 ## 🌲 Project Structure
+
+The project was 
 
 ```
 mlops-income-prediction/
@@ -184,18 +188,78 @@ mlops-income-prediction/
 │   └── workflows/          # CI/CD workflows
 │       ├── ci.yml          # Continuous integration pipeline
 │       ├── cd.yml          # Continuous deployment pipeline
-│       └── retraining.yml  # Automated model retraining
+│       ├── retraining.yml  # Automated model retraining
+│       └── manage_vm.yml   # Start or Stop the specific VM
 ├── backend/                # FastAPI backend service
+│   ├── Dockerfile          # Docker Image for the backend
+│   ├── main.py             # Backend code (FastAPI)
+│   ├── requirements.txt    # Python dependencies for backend
+│   └── test_backend.py     # Backend unit tests
 ├── frontend/               # Streamlit UI
+│   ├── Dockerfile          # Docker Image for the frontend
+│   ├── app.py              # Streamlit application
+│   └── requirements.txt    # Python dependencies for frontend
 ├── mlflow/                 # MLflow training and experiments
+│   ├── Dockerfile          # Docker Image for MLflow
+│   ├── mlflow_setup.py     # Training pipeline script
+│   ├── model_validation.py # Model validation script
+│   ├── param_grid_functions.py # Hyperparameter optimization utils
+│   ├── process_data.py     # Data processing script
+│   ├── requirements.txt    # Python dependencies for MLflow
+│   ├── test_mlflow.py      # MLflow component tests
+│   ├── unpack_zip.py       # Utility to extract data
+│   ├── validate_raw_data.py # Raw data validation
+│   └── validate_processed_data.py # Processed data validation
 ├── model_service/          # Model serving
+│   ├── Dockerfile          # Docker Image for model service
+│   ├── model_metrics.py    # Metrics collection for model
+│   ├── requirements.txt    # Python dependencies for model service
+│   └── wait_for_model.sh   # Initialization script
 ├── grafana/                # Monitoring dashboards
+│   ├── Dockerfile          # Docker Image for Grafana
+│   ├── dashboards/         # Predefined dashboards
+│   │   └── dashboard.json  # Main monitoring dashboard
+│   ├── provisioning/       # Grafana configuration
+│   │   ├── dashboards/     # Dashboard provisioning
+│   │   │   └── dashboards.yaml
+│   │   └── datasources/    # Data source configuration
+│   │       └── datasource.yml
+│   ├── provisioning/datasource.yml # Prometheus data source
+│   └── verify-startup.sh  # Startup verification script
 ├── prometheus/             # Metrics collection
-├── tests/                  # Test suite
-└── docker-compose.yml      # Local development setup
+│   ├── Dockerfile          # Docker Image for Prometheus
+│   └── prometheus.yml      # Prometheus configuration
+├── docs/                   # Project documentation
+│   ├── component-docs.md   # Detailed component documentation
+│   ├── deployment-guide.md # Deployment instructions
+│   └── development-guide.md # Development guidelines
+├── config.json             # Configuration for Azure resources
+├── README.md               # Project overview and instructions
+├── docker-compose.yml      # Local development setup
+└── Solution_Architecture.drawio # Architecture diagram source
 ```
+## 📄 GitHub Environment Variables
 
-## 📄 Environment Variables
+| Variable/Secret | Description | Usage |
+|-----------------|-------------|-------|
+| `KAGGLE_USERNAME` | Kaggle username for API access | Used to download datasets from Kaggle |
+| `KAGGLE_TOKEN` | Authentication token for Kaggle API | Used together with username for Kaggle authentication |
+| `KAGGLE_KEY` | Alternative name for Kaggle API token | Used in CI workflow |
+| `AZURE_CREDENTIALS` | Azure service principal credentials | Used for authenticating to Azure |
+| `VM_SSH_KEY` | SSH private key for VM access | Used for secure SSH access to Azure VMs |
+| `VM_HOST` | Hostname or IP address of Azure VM | Target for SSH connections |
+| `VM_USER` | Username for SSH login to VM | Used with SSH key for VM access |
+| `VM_PROJECT_PATH` | Path to project directory on VM | Specifies where code is deployed on VM |
+| `RESOURCE_GROUP` | Azure resource group name | Groups related Azure resources |
+| `LOCATION` | Azure region for resources | Determines where resources are deployed |
+| `VM_NAME` | Name of the Azure VM | Identifies which VM to start/stop |
+| `STORAGE_ACCOUNT` | Azure Storage account name | Used for storing model data |
+| `CONTAINER` | Blob container for processed data | Stores processed training data |
+| `CONTAINER_RAW` | Blob container for raw data | Stores raw training data |
+
+These variables are used across the CI/CD workflows for deployment, model retraining, and VM management. They're configured as repository secrets (for sensitive information) and environment variables (for non-sensitive configuration) in the GitHub repository settings.
+
+## 📄 Environment Variables (Docker)
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -203,6 +267,18 @@ mlops-income-prediction/
 | `MODEL_PATH` | Path to the deployed model | `/app/models/best_model` |
 | `BACKEND_URL` | URL for the backend service | `http://backend:8000` |
 | `API_URL` | URL for the prediction API | `http://backend:8000/predict` |
+
+## 👥 Project Contributors
+
+| Contributor | Areas of Responsibility |
+|-------------|--------------------------|
+| Louis Baars | Frontend & Lead for documentation |
+| Sophie Bayersdörfer | GitHub Actions & Azure Deployment |
+| Joel Rasch | Backend & Monitoring |
+| John Titz | Docker Development|
+| Yanoothan Yarlvarathan | Data Processing & Model Training |
+
+This project was developed as part of the course Machine Learning Operations at the FH SWF. For questions about specific components, please reach out to the responsible contributor listed above.
 
 ## 🙏 Acknowledgements
 
