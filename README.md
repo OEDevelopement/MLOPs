@@ -133,7 +133,9 @@ The CI pipeline runs on pull requests to DEV and TEST branches, performing:
 - Download, process and validate kaggle dataset
 - Starting docker with docker-compose up build
 - Unit / integration tests
-- On PR to DEV: Auto Merge after successful run 
+- On PR to DEV: Auto Merge after successful run
+
+File: ci.yml
 
 
 ### Continuous Deployment (CD)
@@ -142,6 +144,12 @@ The CD pipeline automatically deploys to the matching VM:
 
 - TEST environment: On merge to TEST branch
 - PROD environment: On merge to PROD branch
+
+File: cd.yml
+
+### Start and Stop VM
+
+This workflow is for starting or stopping a specific VM and can be triggered manually by each team member. This way everyone can use the deployed version without exceeding the budget.
 
 ## 🧪 Model Training
 
