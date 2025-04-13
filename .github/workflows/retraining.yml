@@ -2,8 +2,8 @@
 name: Automated Model Retraining
 
 on:
-  schedule:
-    - cron: '0 0 * * 0'  # Jeden Sonntag um 00:00 Uhr
+  # schedule:
+  #   - cron: '0 0 * * 0'  # Jeden Sonntag um 00:00 Uhr
   workflow_dispatch:
 
 jobs:
